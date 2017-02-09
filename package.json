@@ -1,0 +1,8 @@
+{
+  "name": "guacamole-lite",
+  "version": "1.0.0",
+  "dependencies": {
+    "deep-extend": "^0.4.1",
+    "ws": "^1.1.1"
+  }
+}
