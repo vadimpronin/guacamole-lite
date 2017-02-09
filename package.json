@@ -1,7 +1,7 @@
 {
   "name": "guacamole-lite",
   "description": "Lite version of guacamole server in nodejs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "keywords": [
     "guacamole",
     "rdp",
