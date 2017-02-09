@@ -18,6 +18,9 @@
     "ws": "^1.1.1",
     "deep-extend": "^0.4.1"
   },
+  "bugs": {
+    "web": "https://github.com/vadimpronin/guacamole-lite/issues"
+  },
   "repositories": [
     {
       "type": "git",
