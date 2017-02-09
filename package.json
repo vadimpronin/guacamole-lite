@@ -1,8 +1,33 @@
 {
   "name": "guacamole-lite",
+  "description": "Lite version of guacamole server in nodejs",
   "version": "0.0.1",
+  "keywords": [
+    "guacamole",
+    "rdp",
+    "vnc"
+  ],
+  "maintainers": [
+    {
+      "name": "Vadim Pronin",
+      "email": "git@pronin.com",
+      "web": "http://pronin.com"
+    }
+  ],
   "dependencies": {
-    "deep-extend": "^0.4.1",
-    "ws": "^1.1.1"
-  }
+    "ws": "^1.1.1",
+    "deep-extend": "^0.4.1"
+  },
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/vadimpronin/guacamole-lite.git"
+    }
+  ],
+  "licenses": [
+    {
+      "name": "Apache-2.0",
+      "url": "http://opensource.org/licenses/apache2.0.php"
+    }
+  ]
 }
