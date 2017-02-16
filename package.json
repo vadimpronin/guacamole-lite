@@ -15,8 +15,9 @@
     }
   ],
   "dependencies": {
-    "ws": "^1.1.1",
-    "deep-extend": "^0.4.1"
+    "deep-extend": "^0.4.1",
+    "moment": "^2.17.1",
+    "ws": "^1.1.2"
   },
   "bugs": {
     "url": "https://github.com/vadimpronin/guacamole-lite/issues"
