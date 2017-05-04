@@ -309,7 +309,7 @@ guacServer.on('error', (clientConnection, error) => {
 ```
 
 Note that **clientConnection** object is passed to all event listeners and can be used to access **connectionSettings** 
-(which is *token object*).
+(which is **token object**).
 
 
 ## Tests
