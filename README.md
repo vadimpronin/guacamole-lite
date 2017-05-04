@@ -138,7 +138,7 @@ node's [net.connect()](https://nodejs.org/api/net.html#net_net_connect_port_host
 
 ### Default connection options
 You don't necessary need to pass all connection parameters in the token. You can omit settings that are common for all 
-your connections by moving them to **clientOptions** in guacamole-lite server:
+your connections by moving them to **clientOptions** in *guacamole-lite* server:
 
 ```javascript
 #!/usr/bin/env node
@@ -267,7 +267,7 @@ in **rpd**.
 Also note the new fourth parameter (**callbacks**) in the last line with `new GuacamoleLite`.
 
 ### Events
-guacamole-lite also emiits the following events:
+*guacamole-lite* also emits the following events:
     
  - *open* - when connection to the host is established
  - *close* - when connection is closed
