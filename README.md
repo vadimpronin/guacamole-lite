@@ -7,6 +7,10 @@
 This is the best solution for those ones who need to integrate Guacamole into an existing projects with their own users
 and connections management (or without them at all).
 
+This picture describes the architecture of Guacamole and the role of *guacamole-lite* in it:
+![arch](https://cloud.githubusercontent.com/assets/5534215/25705792/3140af24-30e7-11e7-99a0-0f77c5bf2e73.png)
+
+
 ## Installation
 
 ```
@@ -85,10 +89,11 @@ Now to get the **token** we need to encrypt and base64-encode this **token objec
 This is an example how to do it in PHP:
 
 ```php
+<?php
 
 function encryptToken($value)
 {
-    $iv = Str::randomBytes(16);
+    $iv = random_bytes(16);
 
     $value = \openssl_encrypt(
         json_encode($value),
