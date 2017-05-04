@@ -137,8 +137,8 @@ to [ws documentation](https://github.com/websockets/ws/blob/master/doc/ws.md) fo
 node's [net.connect()](https://nodejs.org/api/net.html#net_net_connect_port_host_connectlistener) function.
 
 ### Default connection options
-You don't necessary need to pass all connection parameters in the token. You can omit common setting for all your connections
-by moving them to **clientOptions** in guacamole-lite server:
+You don't necessary need to pass all connection parameters in the token. You can omit settings that are common for all 
+your connections by moving them to **clientOptions** in guacamole-lite server:
 
 ```javascript
 #!/usr/bin/env node
