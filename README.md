@@ -169,9 +169,11 @@ const guacServer = new GuacamoleLite({}, {}, clientOptions);
 
 ### Query parameters
 Some connection options can be modified in the query:
+
 ``
 ws://your-guacamole-server:8080/?token=token&width=1024&height=768&dpi=32
 ``
+
 By default only *width*, *height* and *dpi* can be modified in query. Others are ignored.
 The list of whitelisted parameters can be modified in **clientOptions**:
 
