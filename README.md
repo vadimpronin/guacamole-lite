@@ -41,15 +41,42 @@ const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptio
 ```
 
 Now to connect to guacamole-lite from the browser you need to add guacamole-common-js into your page. Please refer to 
-[guacamole manual](http://guacamole.incubator.apache.org/doc/gug/guacamole-common-js.html) for instructions on how to 
+[Chapter 17 of Guacamole documentation](http://guacamole.incubator.apache.org/doc/gug/guacamole-common-js.html) for instructions on how to 
 do it.
 
 Then you need to open guacamole connection to 
+
 ``
 ws://your-guacamole-server:8080/?token=token
 ``
-where ***token*** is an encrypted json object containing all the parameters needed to establish connection (host ip, login, password, connection type, etc).
 
+where ***token*** is an encrypted json object containing all the parameters needed to establish connection (host ip, login, password, connection type, etc).
+Here is an example of what it can contain:
+
+```json
+
+{
+    "connection": {
+        "type": "rdp",
+        "settings": {
+            "hostname": "10.0.0.12",
+            "username": "Administrator",
+            "password": "pAsSwOrD",
+            "enable-drive": true,
+            "create-drive-path": true,
+            "security": "any",
+            "ignore-cert": true,
+            "enable-wallpaper": false
+        }
+    }
+}
+
+```
+
+As seen in example json object must contain property ***connection*** which in it's turn must contain ***type*** (rdp, 
+vnc, ssh, telnet) and ***settings***. For full list of settings and their meaning please refer to [Chapter 5 of 
+Guacamole documentation](http://guacamole.incubator.apache.org/doc/gug/configuring-guacamole.html#connection-configuration)
+ (section ***Configuring connections***).
 
 ## Tests
 
