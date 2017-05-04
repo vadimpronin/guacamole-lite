@@ -16,7 +16,7 @@ npm install --save guacamole-lite
 
 Simple example which accepts connections to port 8080 and forwards all traffic to guacd on port 4822
 
-```ecmascript 6
+```javascript
 #!/usr/bin/env node
 
 const GuacamoleLite = require('guacamole-lite');
