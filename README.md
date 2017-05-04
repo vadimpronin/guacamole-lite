@@ -308,6 +308,8 @@ guacServer.on('error', (clientConnection, error) => {
 
 ```
 
+Note that *clientConnection* object is passed to all event listeners and can be used to access *connectionSettings*.
+
 
 ## Tests
 
