@@ -15,7 +15,7 @@ npm install --save guacamole-lite
 
 ## Code Example
 
-Simple example which accepts connections to port 8080 and forwards all traffic to guacd on port 4822
+Simple example which accepts connections to port `8080` and forwards all traffic to guacd on port `4822`
 
 ```javascript
 #!/usr/bin/env node
@@ -128,7 +128,7 @@ If you don't speak PHP, here's what you need to do:
 
 ## More examples
 
-#### Websockets and guacd configuration
+### Websockets and guacd configuration
 
 **websocketOptions** object is passed directly to *ws* library. Please refer 
 to [ws documentation](https://github.com/websockets/ws/blob/master/doc/ws.md) for more options.
@@ -136,7 +136,7 @@ to [ws documentation](https://github.com/websockets/ws/blob/master/doc/ws.md) fo
 **guacdOptions** object may contain **port** and **host** properties which are passed to 
 node's [net.connect()](https://nodejs.org/api/net.html#net_net_connect_port_host_connectlistener) function.
 
-#### Default connection options
+### Default connection options
 You don't necessary need to pass all connection parameters in the token. You can omit common setting for all your connections
 by moving them to **clientOptions** in guacamole-lite server:
 
@@ -167,7 +167,7 @@ const guacServer = new GuacamoleLite({}, {}, clientOptions);
 
 ```
 
-#### Query parameters
+### Query parameters
 Some connection options can be modified in the query:
 ``
 ws://your-guacamole-server:8080/?token=token&width=1024&height=768&dpi=32
@@ -198,7 +198,7 @@ const clientOptions = {
 const guacServer = new GuacamoleLite({}, {}, clientOptions);
 
 ```
-#### Callbacks
+### Callbacks
 You may need to validate/modify connection parameters after the connection was established.
 
 For this example we will modify *token object* the following way:
@@ -264,7 +264,7 @@ in **rpd**.
 
 Also note the new fourth parameter (**callbacks**) in the last line with `new GuacamoleLite`.
 
-#### Events
+### Events
 guacamole-lite also emiits the following events:
     
  - *open* - when connection to the host is established
