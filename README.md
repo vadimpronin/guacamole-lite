@@ -2,12 +2,13 @@
 
 ## Synopsis
 
-*guacamole-lite* is a lightweight replacement for Guacamole Client (server-side) written in NodeJS.
+*guacamole-lite* is a NodeJS replacement for *guacamole-client* (server-side Java servlet).
+Guacamole is a RDP/VNC client for HTML5 browsers.
 
 This is the best solution for those ones who need to integrate Guacamole into an existing projects with their own users
 and connections management (or without them at all).
 
-This picture describes the architecture of Guacamole and the role of *guacamole-lite* in it:
+This diagram describes the architecture of Guacamole and the role of *guacamole-lite* in it:
 ![arch](https://cloud.githubusercontent.com/assets/5534215/25705792/3140af24-30e7-11e7-99a0-0f77c5bf2e73.png)
 
 
@@ -45,7 +46,7 @@ const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptio
 ```
 
 Now to connect to *guacamole-lite* from the browser you need to add *guacamole-common-js* into your page. Please refer to 
-[Chapter 17 of Guacamole documentation](http://guacamole.incubator.apache.org/doc/gug/guacamole-common-js.html) for instructions on how to 
+[Chapter 17](http://guacamole.incubator.apache.org/doc/gug/guacamole-common-js.html) of Guacamole documentation for instructions on how to 
 do it.
 
 Then you need to open guacamole connection to 
@@ -78,9 +79,9 @@ Here is an example of what it can contain:
 ```
 
 As seen in the example **token object** must contain property **connection** which in it's turn must contain **type** (rdp, 
-vnc, ssh, telnet) and **settings**. For full list of *settings* and their meaning please refer to [Chapter 5 of 
-Guacamole documentation](http://guacamole.incubator.apache.org/doc/gug/configuring-guacamole.html#connection-configuration)
-section *Configuring connections*).
+vnc, ssh, telnet) and **settings**. For full list of *settings* and their meaning please refer to 
+[Chapter 5](http://guacamole.incubator.apache.org/doc/gug/configuring-guacamole.html#connection-configuration)
+of Guacamole documentation section *Configuring connections*).
  
 **Token object** may contain any additional parameters you may need in your application. For example it can contain token
 expiration time (see below how to make use of it).
@@ -143,7 +144,7 @@ node's [net.connect()](https://nodejs.org/api/net.html#net_net_connect_port_host
 
 ### Default connection options
 You don't necessary need to pass all connection parameters in the token. You can omit settings that are common for all 
-your connections by moving them to **clientOptions** in *guacamole-lite* server:
+your connections by moving them to **clientOptions.connectionDefaultSettings** in *guacamole-lite* server:
 
 ```javascript
 #!/usr/bin/env node
@@ -179,7 +180,8 @@ Some connection options can be modified in the query:
 ws://your-guacamole-server:8080/?token=token&width=1024&height=768&dpi=32
 ``
 
-By default only *width*, *height* and *dpi* can be modified in query. Others are ignored.
+Settings from the query override default settings and settings from the token.
+By default only *width*, *height* and *dpi* can be set in query. Others are ignored.
 The list of whitelisted parameters can be modified in **clientOptions**:
 
 ```javascript
@@ -208,7 +210,7 @@ const guacServer = new GuacamoleLite({}, {}, clientOptions);
 ### Callbacks
 You may need to validate/modify connection parameters after the connection was established.
 
-For this example we will modify *token object* the following way:
+For this example we will modify **token object** the following way:
 
 ```json
 
@@ -229,7 +231,7 @@ For this example we will modify *token object* the following way:
 ```
 
 As you see we have added **expiration** and **userId** which are not used by guacamole-lite itself, buy may be used by 
-your application build on top of it. Like in this example:
+your application built on top of it. Like in this example:
 
 ```javascript
 #!/usr/bin/env node
@@ -253,7 +255,7 @@ const callbacks = {
 
         settings.connection['drive-path'] = '/tmp/guacamole_' + settings.userId;
 
-        callback(undefined, settings);
+        callback(null, settings);
     }
 };
 
@@ -262,9 +264,9 @@ const guacServer = new GuacamoleLite({}, {}, clientOptions, callbacks);
 ```
 
 In this example we have new object **callbacks** which contains function **processConnectionSettings**. This function 
-accepts **settings** which is basically slightly flattened decoded **token object** and **callback**. 
+accepts **settings** which is basically slightly flattened **token object** and **callback**. 
 **Callback** in it's turn accepts two parameters: **err** (in case of an error) and **settings** which is modified 
-**token object** (we have added 'drive-path' in the example). 
+**token object** (we have added 'drive-path' in the example). **Callback** must be called at the end of the function.
 
 Please note that **connection** property does not contain **rdp**, but instead contains everything that was previously 
 in **rpd**. 
