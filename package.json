@@ -19,6 +19,9 @@
     "moment": "^2.17.1",
     "ws": "^1.1.2"
   },
+  "engines": {
+    "node": ">=6"
+  },
   "bugs": {
     "url": "https://github.com/vadimpronin/guacamole-lite/issues"
   },
