@@ -123,8 +123,34 @@ function encryptToken($value)
 }
 
 ```
+another example in NodeJS:
 
-If you don't speak PHP, here's what you need to do:
+```javascript
+const crypto = require('crypto');
+
+const clientOptions = {
+    cypher: 'AES-256-CBC',
+    key: 'MySuperSecretKeyForParamsToken12'
+}
+
+const encrypt = (value) => {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(clientOptions.cypher, clientOptions.key, iv);
+
+    let crypted = cipher.update(JSON.stringify(value), 'utf8', 'base64');
+    crypted += cipher.final('base64');
+
+    const data = {
+        iv: iv.toString('base64'),
+        value: crypted
+    };
+
+    return new Buffer(JSON.stringify(data)).toString('base64');
+};
+```
+
+
+In other words here's what you'd want to do to get the encrypted **token**:
 1. Generate initialization vector for encryption (**iv**). 
 2. Take json object with connection settings (see example above) and encrypt it using **cyper** and **key** from **clientOptions**.
 3. Base64 encode result of p.2 (put it in **value**)
