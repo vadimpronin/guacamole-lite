@@ -374,6 +374,83 @@ server.listen(8080);
 ```
 
 
+### Log levels
+
+```javascript
+#!/usr/bin/env node
+
+const GuacamoleLite = require('guacamole-lite');
+
+const websocketOptions = {
+    port: 8080 // we will accept connections to this port
+};
+
+const guacdOptions = {
+    port: 4822 // port of guacd
+};
+
+const clientOptions = {
+    crypt: {
+        cypher: 'AES-256-CBC',
+        key: 'MySuperSecretKeyForParamsToken12'
+    },
+    log: {
+        level: 'DEBUG'
+    }
+};
+
+const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions);
+```
+
+**clientOptions.log.level** defines verbosity of logs. Possible values are:
+- *"QUIET"* - no logs
+- *"ERRORS"* - only errors
+- *"NORMAL"* - errors + minimal logs (startup and shutdown messages)
+- *"VERBOSE"*  - (**default**) normal + connection messages (opened, closed, guacd exchange, etc)
+- *"DEBUG"* - verbose + all OPCODES sent/received within guacamole sessions
+
+
+### Custom log functions
+
+By default *guacamole-lite* uses `console.log` and `console.error` functions for logging.
+You can redefine these functions by setting **clientOptions.log.stdLog**
+and **clientOptions.log.errorLog** like in the example below. Note that **clientOptions.log.level**
+is still applied, which means that messages that don't match desired log level won't be
+sent to your custom functions  
+
+```javascript
+#!/usr/bin/env node
+
+const GuacamoleLite = require('guacamole-lite');
+
+const websocketOptions = {
+    port: 8080 // we will accept connections to this port
+};
+
+const guacdOptions = {
+    port: 4822 // port of guacd
+};
+
+const clientOptions = {
+    crypt: {
+        cypher: 'AES-256-CBC',
+        key: 'MySuperSecretKeyForParamsToken12'
+    },
+    log: {
+        level: 'DEBUG',
+        stdLog: (...args) => {
+            console.log('[MyLog]', ...args)
+        },
+        errorLog: (...args) => {
+            console.error('[MyLog]', ...args)
+        }
+    }
+};
+
+const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions);
+```
+
+
 ## Tests
 
 No tests yet :(
