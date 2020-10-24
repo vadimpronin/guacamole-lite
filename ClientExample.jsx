@@ -24,7 +24,7 @@ class GuacamoleStage extends React.Component {
     });
 
     this.tunnel = new Guacamole.WebSocketTunnel('ws://localhost:8080/');
-    this.client = new Guacmole.Client(this.tunnel);
+    this.client = new Guacamole.Client(this.tunnel);
   }
 
   componentDidMount() {
