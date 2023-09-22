@@ -1,69 +1,99 @@
-import Net from 'net';
+
+import  Net  from 'net';
+import { GuacdServer } from './Server';
+import { ClientConnection } from './ClientConnection';
+
 export class GuacdClient {
+
+    STATE_OPENING: number = 0;
+    STATE_OPEN: number = 1;
+    STATE_CLOSED: number = 2;
+
+    state = this.STATE_OPENING;
+
+    server: any;
+    clientConnection: ClientConnection;
+    handshakeReplySent: boolean = false;
+    receivedBuffer: string = '';
+    lastActivity: number = Date.now();
+
+    guacdConnection;
+    activityCheckInterval;
+
     /**
      *
      * @param {Server} server
      * @param {ClientConnection} clientConnection
      */
-    constructor(server, clientConnection) {
+    constructor(server: GuacdServer, clientConnection: ClientConnection) {
         this.STATE_OPENING = 0;
         this.STATE_OPEN = 1;
         this.STATE_CLOSED = 2;
+
         this.state = this.STATE_OPENING;
-        this.handshakeReplySent = false;
-        this.receivedBuffer = '';
-        this.lastActivity = Date.now();
-        this.STATE_OPENING = 0;
-        this.STATE_OPEN = 1;
-        this.STATE_CLOSED = 2;
-        this.state = this.STATE_OPENING;
+
         this.server = server;
         this.clientConnection = clientConnection;
         this.handshakeReplySent = false;
         this.receivedBuffer = '';
         this.lastActivity = Date.now();
+
         this.guacdConnection = Net.connect(server.guacdOptions.port, server.guacdOptions.host);
+
         this.guacdConnection.on('connect', this.processConnectionOpen.bind(this));
         this.guacdConnection.on('data', this.processReceivedData.bind(this));
         this.guacdConnection.on('close', this.clientConnection.close.bind(this.clientConnection));
         this.guacdConnection.on('error', this.clientConnection.error.bind(this.clientConnection));
+
         this.activityCheckInterval = setInterval(this.checkActivity.bind(this), 1000);
     }
+
     checkActivity() {
         if (Date.now() > (this.lastActivity + 10000)) {
             this.clientConnection.close(new Error('guacd was inactive for too long'));
         }
     }
-    close(error) {
+
+    close(error: any) {
         if (this.state == this.STATE_CLOSED) {
             return;
         }
+
         if (error) {
             this.clientConnection.log(this.server.LOGLEVEL.ERRORS, error);
         }
+
         this.log(this.server.LOGLEVEL.VERBOSE, 'Closing guacd connection');
         clearInterval(this.activityCheckInterval);
+
         this.guacdConnection.removeAllListeners('close');
         this.guacdConnection.end();
         this.guacdConnection.destroy();
+
         this.state = this.STATE_CLOSED;
         this.server.emit('close', this.clientConnection);
     }
+
     send(data) {
         if (this.state == this.STATE_CLOSED) {
             return;
         }
+
         this.log(this.server.LOGLEVEL.DEBUG, '<<<W2G< ' + data + '***');
         this.guacdConnection.write(data);
     }
+
     log(level, ...args) {
         this.clientConnection.log(level, ...args);
     }
+
     processConnectionOpen() {
         this.log(this.server.LOGLEVEL.VERBOSE, 'guacd connection open');
+
         this.log(this.server.LOGLEVEL.VERBOSE, 'Selecting connection type: ' + this.clientConnection.connectionType);
         this.sendOpCode(['select', this.clientConnection.connectionType]);
     }
+
     sendHandshakeReply() {
         this.sendOpCode([
             'size',
@@ -74,69 +104,94 @@ export class GuacdClient {
         this.sendOpCode(['audio'].concat(this.clientConnection.query.GUAC_AUDIO || []));
         this.sendOpCode(['video'].concat(this.clientConnection.query.GUAC_VIDEO || []));
         this.sendOpCode(['image']);
-        let serverHandshake = this.getFirstOpCodeFromBuffer();
+
+        let serverHandshake: string | string[] = this.getFirstOpCodeFromBuffer();
+
         this.log(this.server.LOGLEVEL.VERBOSE, 'Server sent handshake: ' + serverHandshake);
+
         serverHandshake = serverHandshake.split(',');
-        let connectionOptions = [];
-        for (let handshake of serverHandshake) {
-            connectionOptions.push(this.getConnectionOption(handshake));
+        let connectionOptions: any[] = [];
+
+        for(let handshake of serverHandshake){
+            connectionOptions.push(this.getConnectionOption(handshake))
         }
+        
+
         this.sendOpCode(connectionOptions);
+
         this.handshakeReplySent = true;
+
         if (this.state != this.STATE_OPEN) {
             this.state = this.STATE_OPEN;
             this.server.emit('open', this.clientConnection);
         }
     }
+
     getConnectionOption(optionName) {
-        return this.clientConnection.connectionSettings.connection[this.parseOpCodeAttribute(optionName)] || null;
+        return this.clientConnection.connectionSettings.connection[this.parseOpCodeAttribute(optionName)] || null
     }
+
     getFirstOpCodeFromBuffer() {
         let delimiterPos = this.receivedBuffer.indexOf(';');
         let opCode = this.receivedBuffer.substring(0, delimiterPos);
+
         this.receivedBuffer = this.receivedBuffer.substring(delimiterPos + 1, this.receivedBuffer.length);
+
         return opCode;
     }
+
     sendOpCode(opCode) {
         opCode = this.formatOpCode(opCode);
         this.log(this.server.LOGLEVEL.VERBOSE, 'Sending opCode: ' + opCode);
         this.send(opCode);
     }
-    formatOpCode(opCodeParts) {
+
+     formatOpCode(opCodeParts) {
         opCodeParts.forEach((part, index, opCodeParts) => {
             part = this.stringifyOpCodePart(part);
             opCodeParts[index] = part.length + '.' + part;
         });
+
         return opCodeParts.join(',') + ';';
     }
-    stringifyOpCodePart(part) {
+
+     stringifyOpCodePart(part) {
         if (part === null) {
             part = '';
         }
+
         return String(part);
     }
-    parseOpCodeAttribute(opCodeAttribute) {
+
+     parseOpCodeAttribute(opCodeAttribute) {
         return opCodeAttribute.substring(opCodeAttribute.indexOf('.') + 1, opCodeAttribute.length);
     }
+
     processReceivedData(data) {
         this.receivedBuffer += data;
         this.lastActivity = Date.now();
+
         if (!this.handshakeReplySent) {
             if (this.receivedBuffer.indexOf(';') === -1) {
                 return; // incomplete handshake received from guacd. Will wait for the next part
-            }
-            else {
+            } else {
                 this.sendHandshakeReply();
             }
         }
+
         this.sendBufferToWebSocket();
     }
+
     sendBufferToWebSocket() {
         const delimiterPos = this.receivedBuffer.lastIndexOf(';');
         const bufferPartToSend = this.receivedBuffer.substring(0, delimiterPos + 1);
+
         if (bufferPartToSend) {
             this.receivedBuffer = this.receivedBuffer.substring(delimiterPos + 1, this.receivedBuffer.length);
             this.clientConnection.send(bufferPartToSend);
         }
     }
+
+
 }
+

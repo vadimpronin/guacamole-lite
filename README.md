@@ -67,11 +67,11 @@ Here is an example of what it can contain:
             "hostname": "10.0.0.12",
             "username": "Administrator",
             "password": "pAsSwOrD",
-            "enable-drive": true,
-            "create-drive-path": true,
+            enable_drive: true,
+            create_drive_path: true,
             "security": "any",
-            "ignore-cert": true,
-            "enable-wallpaper": false
+            ignore_cert: true,
+            enable_wallpaper: false
         }
     }
 }
@@ -249,7 +249,7 @@ For this example we will modify **token object** the following way:
             "hostname": "10.0.0.12",
             "username": "Administrator",
             "password": "pAsSwOrD",
-            "enable-drive": true
+            enable_drive: true
         }
     }
 }

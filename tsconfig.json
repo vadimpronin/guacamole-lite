@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "outDir": "lib",
+        "rootDir": "src",
+        "strict": true,
+        "noImplicitAny": false,
+        "strictNullChecks": true,
+        "checkJs": false,
+        "allowJs": false,
+        "moduleResolution": "node",
+        "strictPropertyInitialization": false,
+        "types": [
+            "node"
+        ],
+        "lib": [
+            "es6",
+            "ES2021.String"
+        ],
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowUnreachableCode": true,
+        "useUnknownInCatchVariables": false
+    },
+    "include": [
+        "./src/*.ts"
+    ]
+}
