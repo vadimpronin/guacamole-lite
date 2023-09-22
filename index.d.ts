@@ -45,7 +45,7 @@ export interface log_settings{
     errorLog: any;
 }
 
-export interface options{
+export interface guacLiteOptions{
     connection?: connection;
     maxInactivityTime?: number;
     log: log_settings;
@@ -67,3 +67,5 @@ export interface guacdOptions{
     host?: string;
     port: number;
 }
+
+export interface GuacdServer extends GuacdServer {}

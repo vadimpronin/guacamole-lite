@@ -1,31 +1,28 @@
-# guacamole-lite
+# guacamole-lite-ts
 
 ## Synopsis
 
-*guacamole-lite* is a NodeJS replacement for *guacamole-client* (server-side Java servlet).
-Guacamole is a RDP/VNC client for HTML5 browsers.
+*guacamole-lite-ts* is a NodeJS replacement for *guacamole-client* (server-side Java servlet).
+Guacamole is a RDP/VNC client for HTML5 browsers. This is a fork of vadimpronin excellent work on guacamole-lite.
 
-This is the best solution for those ones who need to integrate Guacamole into an existing projects with their own users
-and connections management (or without them at all).
+This is solution allows dynamic control of encryption and decryption inside the callback. This solution also requires an express server. 
 
-This diagram describes the architecture of Guacamole and the role of *guacamole-lite* in it:
+This diagram describes the architecture of Guacamole and the role of *guacamole-lite-ts* in it:
 ![arch](https://cloud.githubusercontent.com/assets/5534215/25705792/3140af24-30e7-11e7-99a0-0f77c5bf2e73.png)
 
 
 ## Installation
 
 ```
-npm install --save guacamole-lite
+npm install --save guacamole-lite-ts
 ```
 
 ## Code Example
 
 Simple example which accepts connections to port `8080` and forwards all traffic to guacd on port `4822`
 
-```javascript
-#!/usr/bin/env node
-
-const GuacamoleLite = require('guacamole-lite');
+```typescript
+const GuacamoleLite = require('guacamole-lite-ts');
 
 const websocketOptions = {
     port: 8080 // we will accept connections to this port
@@ -45,7 +42,7 @@ const clientOptions = {
 const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions);
 ```
 
-Now to connect to *guacamole-lite* from the browser you need to add *guacamole-common-js* into your page. Please refer to 
+Now to connect to *guacamole-lite-ts* from the browser you need to add *guacamole-common-js* into your page. Please refer to 
 [Chapter 17](http://guacamole.incubator.apache.org/doc/gug/guacamole-common-js.html) of Guacamole documentation for instructions on how to 
 do it.
 
@@ -170,12 +167,12 @@ node's [net.connect()](https://nodejs.org/api/net.html#net_net_connect_port_host
 
 ### Default connection options
 You don't necessary need to pass all connection parameters in the token. You can omit settings that are common for all 
-your connections by moving them to **clientOptions.connectionDefaultSettings** in *guacamole-lite* server:
+your connections by moving them to **clientOptions.connectionDefaultSettings** in *guacamole-lite-ts* server:
 
 ```javascript
 #!/usr/bin/env node
 
-const GuacamoleLite = require('guacamole-lite');
+const GuacamoleLite = require('guacamole-lite-ts');
 
 const clientOptions = {
     crypt: {
@@ -213,7 +210,7 @@ The list of whitelisted parameters can be modified in **clientOptions**:
 ```javascript
 #!/usr/bin/env node
 
-const GuacamoleLite = require('guacamole-lite');
+const GuacamoleLite = require('guacamole-lite-ts');
 
 const clientOptions = {
     crypt: {
@@ -256,13 +253,13 @@ For this example we will modify **token object** the following way:
 
 ```
 
-As you see we have added **expiration** and **userId** which are not used by guacamole-lite itself, buy may be used by 
+As you see we have added **expiration** and **userId** which are not used by guacamole-lite-ts itself, buy may be used by 
 your application built on top of it. Like in this example:
 
 ```javascript
 #!/usr/bin/env node
 
-const GuacamoleLite = require('guacamole-lite');
+const GuacamoleLite = require('guacamole-lite-ts');
 
 const clientOptions = {
     crypt: {
@@ -300,7 +297,7 @@ in **rpd**.
 Also note the new fourth parameter (**callbacks**) in the last line with `new GuacamoleLite`.
 
 ### Events
-*guacamole-lite* also emits the following events:
+*guacamole-lite-ts* also emits the following events:
     
  - *open* - when connection to the host is established
  - *close* - when connection is closed
@@ -311,7 +308,7 @@ In this example we will use these events to send postbacks to our backend:
 ```javascript
 #!/usr/bin/env node
 
-const GuacamoleLite = require('guacamole-lite');
+const GuacamoleLite = require('guacamole-lite-ts');
 const Http = require('http');
 
 const clientOptions = {
@@ -349,7 +346,7 @@ Note that **clientConnection** object is passed to all event listeners and can b
 ```javascript
 #!/usr/bin/env node
 
-const GuacamoleLite = require('guacamole-lite');
+const GuacamoleLite = require('guacamole-lite-ts');
 const express = require('express');
 const http = require('http');
 
@@ -379,7 +376,7 @@ server.listen(8080);
 ```javascript
 #!/usr/bin/env node
 
-const GuacamoleLite = require('guacamole-lite');
+const GuacamoleLite = require('guacamole-lite-ts');
 
 const websocketOptions = {
     port: 8080 // we will accept connections to this port
@@ -412,7 +409,7 @@ const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptio
 
 ### Custom log functions
 
-By default *guacamole-lite* uses `console.log` and `console.error` functions for logging.
+By default *guacamole-lite-ts* uses `console.log` and `console.error` functions for logging.
 You can redefine these functions by setting **clientOptions.log.stdLog**
 and **clientOptions.log.errorLog** like in the example below. Note that **clientOptions.log.level**
 is still applied, which means that messages that don't match desired log level won't be
@@ -421,7 +418,7 @@ sent to your custom functions
 ```javascript
 #!/usr/bin/env node
 
-const GuacamoleLite = require('guacamole-lite');
+const GuacamoleLite = require('guacamole-lite-ts');
 
 const websocketOptions = {
     port: 8080 // we will accept connections to this port

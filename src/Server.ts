@@ -3,7 +3,7 @@ import { ClientConnection } from "./ClientConnection.js";
 import { ServerOptions, Server as wsServer } from 'ws';
 import DeepExtend from 'deep-extend';
 import { Server } from 'https'
-import { guacdOptions, logLevel, options } from "../index.js";
+import { guacdOptions, logLevel, guacLiteOptions } from "../index.js";
 
 
 
@@ -13,13 +13,13 @@ export class GuacdServer extends EventEmitter {
     LOGLEVEL = logLevel;
     wsOptions: ServerOptions;
     guacdOptions: guacdOptions;
-    clientOptions: options;
+    clientOptions: guacLiteOptions;
     callbacks: any;
     connectionsCount: number = 0;
     activeConnections: Map<any, any>;
     webSocketServer: wsServer;
 
-    constructor(wsOptions: ServerOptions, guacdOptions: guacdOptions, clientOptions: options, callbacks: any) {
+    constructor(wsOptions: ServerOptions, guacdOptions: guacdOptions, clientOptions: guacLiteOptions, callbacks: any) {
         super();
 
         this.wsOptions = wsOptions;
