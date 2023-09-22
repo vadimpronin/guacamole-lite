@@ -5,7 +5,7 @@ import Moment from 'moment';
 import pkg from 'crypto-js';
 import { GuacdClient } from './GuacdClient.js';
 import { GuacdServer } from './Server.js';
-import { type, unencryptOptions } from '../index.js';
+import { type } from '../index.js';
 const  crypto = pkg;
 
 

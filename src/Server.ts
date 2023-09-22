@@ -38,61 +38,25 @@ export class GuacdServer extends EventEmitter {
             },
             connectionDefaultSettings: {
                 rdp: {
-                    'args': 'connect',
                     'port': '3389',
                     'width': 1024,
                     'height': 768,
                     'dpi': 96,
                 },
                 vnc: {
-                    'args': 'connect',
                     'port': '5900',
-                    'width': 1024,
-                    'height': 768,
-                    'dpi': 96,
                 },
                 ssh: {
-                    'args': 'connect',
                     'port': 22,
-                    'width': 1024,
-                    'height': 768,
-                    'dpi': 96,
                 },
                 telnet: {
-                    'args': 'connect',
                     'port': 23,
-                    'width': 1024,
-                    'height': 768,
-                    'dpi': 96,
                 }
             },
             allowedUnencryptedConnectionSettings: {
-                rdp: [
-                    'width',
-                    'height',
-                    'dpi'
-                ],
-                vnc: [
-                    'width',
-                    'height',
-                    'dpi'
-                ],
-                ssh: [
-                    'color-scheme',
-                    'font-name',
-                    'font-size',
-                    'width',
-                    'height',
-                    'dpi'
-                ],
-                telnet: [
-                    'color-scheme',
-                    'font-name',
-                    'font-size',
-                    'width',
-                    'height',
-                    'dpi'
-                ]
+                rdp: [ 'width', 'height', 'dpi' ],
+                vnc: [ 'swap-red-blue' ],
+                ssh: [ 'enable-sftp' ]
             }
         }
         DeepExtend(this.clientOptions, clientOptions);
