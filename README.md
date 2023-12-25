@@ -1,69 +1,162 @@
 # guacamole-lite
 
-## Synopsis
+## Introduction
 
-*guacamole-lite* is a NodeJS replacement for *guacamole-client* (server-side Java servlet).
-Guacamole is a RDP/VNC client for HTML5 browsers.
+### What is `guacamole-lite`?
 
-This is the best solution for those ones who need to integrate Guacamole into an existing projects with their own users
-and connections management (or without them at all).
+`guacamole-lite` is a lightweight Node.js library designed to create servers compatible with the Guacamole protocol.
 
-This diagram describes the architecture of Guacamole and the role of *guacamole-lite* in it:
-![arch](https://cloud.githubusercontent.com/assets/5534215/25705792/3140af24-30e7-11e7-99a0-0f77c5bf2e73.png)
+### What is Guacamole?
 
+Apache Guacamole is a HTML5 web client for remote desktop environments using protocols such as VNC or RDP, SSH or
+Telnet.
+
+### Why use `guacamole-lite`?
+
+Unlike the Java-based original `guacamole-client`, which is a full-featured client with its own user and host management
+system, `guacamole-lite` is tailored for integration into existing applications. It is particularly suitable for systems
+that already have user, host, and credential management in place, offering a more streamlined approach to adopting the
+Guacamole protocol.
+
+The main differences between `guacamole-lite` and the Java-based `guacamole-client` are:
+
+- **Integration-Friendly**: `guacamole-lite` is built to be easily integrated into existing applications, allowing
+  developers to leverage their own systems for managing users, hosts, and credentials. In contrast, `guacamole-client`
+  comes with a comprehensive suite of features, including its own database for user and host management, which can make
+  integration into existing systems more challenging.
+
+- **Node.js Based**: The library is written in Node.js, which provides a more accessible and flexible development
+  experience compared to the Java-based `guacamole-client`. This makes `guacamole-lite` easier to extend, modify, and
+  integrate into modern web applications.
+
+- **Resource Efficiency**: `guacamole-lite` is less resource-intensive, making it a more efficient choice for
+  environments where resource optimization is crucial.
+
+By focusing on these key areas, `guacamole-lite` offers a compelling option for developers looking to implement remote
+desktop capabilities within their Node.js applications.
+
+## Architecture Overview
+
+`guacamole-lite` is designed to seamlessly fit into the
+broader [Guacamole ecosystem](https://guacamole.apache.org/doc/gug/guacamole-architecture.html), providing an efficient
+way to develop Guacamole-compatible servers in Node.js. The following diagram illustrates the typical architecture of a
+Guacamole deployment and how `guacamole-lite` integrates within it:
+
+![arch](docs/architecture.png)
+
+The diagram shows the following components:
+
+1. **HTML5 Browser (guacamole-common-js)**: This is the user's interface, a HTML5 application that runs in the browser.
+   The user interacts with this layer to get access to remote desktop sessions. The application uses
+   [guacamole-common-js](https://guacamole.apache.org/doc/gug/guacamole-common-js.html), a library
+   that provides the Guacamole protocol implementation in JavaScript.
+
+2. **Guacamole protocol**: This communication protocol is used by `guacamole-common-js` to interact with `guacd`
+   via `guacamole-lite`, acting as a proxy. Check out
+   the [Guacamole protocol](https://guacamole.apache.org/doc/gug/guacamole-protocol.html) documentation for more
+   details.
+
+3. **Node.js application**: A Node.js application that integrates `guacamole-lite` package. It provides the
+   configuration to `guacamole-lite` and handles business logic, such as session management.
+
+4. **guacamole-lite** package: As the Node.js application component, `guacamole-lite` implements handshaking of the
+   Guacamole protocol and further forwarding of Guacamole protocol instructions between `guacamole-common-js` (over
+   WebSockets) and `guacd` (over TCP or Unix socket).
+
+5. **guacd**: A core component of the Guacamole infrastructure, `guacd` translates the Guacamole protocol
+   instructions into native remote desktop protocol commands. See
+   the [Guacamole architecture](https://guacamole.apache.org/doc/gug/guacamole-architecture.html)
+   documentation for more details.
+
+6. **Guacamole Server**: A server that hosts `Node.js application` with `guacamole-lite` package
+   and `guacd`. These components are typically deployed together, but they can also be separated into different
+   machines.
+
+7. **Remote Desktop Protocols**: The bottommost layer includes the various protocols handled by `guacd`:
+    - **RDP (Remote Desktop Protocol)**: Primarily used for connecting to Windows machines.
+    - **VNC (Virtual Network Computing)**: Connects to various operating systems, including Windows, Mac, and Linux.
+    - **SSH (Secure Shell)**: Used for secure command-line access to Linux and Unix-like systems.
+
+**Overall Data Flow**:
+
+- A user initiates a remote desktop session from their browser.
+- The browser communicates with `guacamole-lite` via WebSockets.
+- `guacamole-lite` forwards the instructions to `guacd` using the Guacamole protocol.
+- `guacd` interacts with the remote desktop system using the appropriate protocol (RDP, VNC, or SSH).
+- The remote system responds back through the chain: from `guacd` to `guacamole-lite`, through WebSockets, and finally
+  to the user's browser, allowing the user to see and control the remote desktop.
+
+The entire process is encapsulated within the "Guacamole server" setup, indicating that both `guacamole-lite`
+and `guacd` are integral parts of the server infrastructure. This architecture allows `guacamole-lite` to provide a
+lightweight and flexible solution for integrating remote desktop capabilities into Node.js applications.
 
 ## Installation
 
-```
-npm install --save guacamole-lite
+To install `guacamole-lite` in your Node.js project, run the following command:
+
+```sh
+npm install guacamole-lite --save
 ```
 
-## Code Example
+This will add `guacamole-lite` as a dependency to your `package.json` file and download it to the `node_modules`
+directory.
 
-Simple example which accepts connections to port `8080` and forwards all traffic to guacd on port `4822`
+## Quick Start Guide
+
+To get started with `guacamole-lite` and create a Guacamole-compatible server, follow the basic example below. For
+advanced configuration options, please refer to the relevant sections of
+the [advanced configuration documentation](docs/advanced-configuration.md).
+
+### Basic Server Setup
+
+Here's a minimal example to set up a `guacamole-lite` server:
 
 ```javascript
-#!/usr/bin/env node
-
 const GuacamoleLite = require('guacamole-lite');
 
 const websocketOptions = {
-    port: 8080 // we will accept connections to this port
+    port: 8080 // WebSocket server port
 };
 
 const guacdOptions = {
-    port: 4822 // port of guacd
+    port: 4822 // guacd server port
 };
 
 const clientOptions = {
     crypt: {
         cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
+        key: 'MySuperSecretKeyForParamsToken12' // Use a secure key
     }
 };
 
 const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions);
 ```
 
-Now to connect to *guacamole-lite* from the browser you need to add *guacamole-common-js* into your page. Please refer to 
-[Chapter 17](http://guacamole.incubator.apache.org/doc/gug/guacamole-common-js.html) of Guacamole documentation for instructions on how to 
-do it.
+This code will start a WebSocket server that interfaces with the Guacamole daemon (`guacd`) and handles client
+connections securely.
 
-Then you need to open guacamole connection to 
+### Connecting to the Server
 
-``
+To connect to the server, your application needs to create a WebSocket connection and pass the connection parameters to
+the server. The connection parameters are passed in an encrypted token in the query string of the WebSocket URL.
+
+```
 ws://your-guacamole-server:8080/?token=token
-``
+```
 
-where **token** is an encrypted **token object** (json) containing all the parameters needed to establish connection (host ip, login, password, connection type, etc).
-Here is an example of what it can contain:
+The encrypted token is a JSON object that is **base64-encoded and encrypted**. It contains the necessary parameters for
+establishing a remote desktop like in the example below:
 
-```json
+```js
+const crypto = require('crypto');
 
-{
-    "connection": {
-        "type": "rdp",
-        "settings": {
+const CIPHER = 'aes-256-cbc';
+const SECRET_KEY = 'MySuperSecretKeyForParamsToken12';
+
+const tokenObject = {
+    connection: {
+        type: "rdp",
+        settings: {
             "hostname": "10.0.0.12",
             "username": "Administrator",
             "password": "pAsSwOrD",
@@ -74,383 +167,125 @@ Here is an example of what it can contain:
             "enable-wallpaper": false
         }
     }
-}
+};
 
-```
-
-As seen in the example **token object** must contain property **connection** which in it's turn must contain **type** (rdp, 
-vnc, ssh, telnet) and **settings**. For full list of *settings* and their meaning please refer to 
-[Chapter 5](http://guacamole.incubator.apache.org/doc/gug/configuring-guacamole.html#connection-configuration)
-of Guacamole documentation section *Configuring connections*).
- 
-**Token object** may contain any additional parameters you may need in your application. For example it can contain token
-expiration time (see below how to make use of it).
-
-Now to get the **token** we need to encrypt and base64-encode this **token object** using **cyper** and **key** from **clientOptions**.
-This is an example how to do it in PHP:
-
-```php
-<?php
-
-function encryptToken($value)
-{
-    $iv = random_bytes(16);
-
-    $value = \openssl_encrypt(
-        json_encode($value),
-        'AES-256-CBC',
-        'MySuperSecretKeyForParamsToken12',
-        0,
-        $iv
-    );
-
-    if ($value === false) {
-        throw new \Exception('Could not encrypt the data.');
-    }
-
-    $data = [
-        'iv' => base64_encode($iv),
-        'value' => $value,
-    ];
-
-    $json = json_encode($data);
-
-    if (!is_string($json)) {
-        throw new \Exception('Could not encrypt the data.');
-    }
-
-    return base64_encode($json);
-}
-
-```
-another example in NodeJS:
-
-```javascript
-const crypto = require('crypto');
-
-const clientOptions = {
-    cypher: 'AES-256-CBC',
-    key: 'MySuperSecretKeyForParamsToken12'
-}
-
-const encrypt = (value) => {
+function encryptToken(value) {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(clientOptions.cypher, clientOptions.key, iv);
+    const cipher = crypto.createCipheriv(CIPHER, Buffer.from(SECRET_KEY), iv);
 
-    let crypted = cipher.update(JSON.stringify(value), 'utf8', 'base64');
-    crypted += cipher.final('base64');
+    let encrypted = cipher.update(JSON.stringify(value), 'utf8', 'base64');
+    encrypted += cipher.final('base64');
 
     const data = {
         iv: iv.toString('base64'),
-        value: crypted
+        value: encrypted
     };
 
-    return new Buffer(JSON.stringify(data)).toString('base64');
-};
-```
-
-
-In other words here's what you'd want to do to get the encrypted **token**:
-1. Generate initialization vector for encryption (**iv**). 
-2. Take json object with connection settings (see example above) and encrypt it using **cyper** and **key** from **clientOptions**.
-3. Base64 encode result of p.2 (put it in **value**)
-4. Create anothe json object containing {"iv": **iv**, "value": **value**}
-5. Base64 encode result of p.4 and this will be your token
-
-
-## More examples
-
-### Websockets and guacd configuration
-
-**websocketOptions** object is passed directly to *ws* library. Please refer 
-to [ws documentation](https://github.com/websockets/ws/blob/master/doc/ws.md) for more options.
-
-**guacdOptions** object may contain **port** and **host** properties which are passed to 
-node's [net.connect()](https://nodejs.org/api/net.html#net_net_connect_port_host_connectlistener) function.
-
-### Default connection options
-You don't necessary need to pass all connection parameters in the token. You can omit settings that are common for all 
-your connections by moving them to **clientOptions.connectionDefaultSettings** in *guacamole-lite* server:
-
-```javascript
-#!/usr/bin/env node
-
-const GuacamoleLite = require('guacamole-lite');
-
-const clientOptions = {
-    crypt: {
-        cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
-    },
-
-    connectionDefaultSettings: {
-        rdp: {
-            'create-drive-path': true,
-            'security': 'any',
-            'ignore-cert': true,
-            'enable-wallpaper': false,
-            'create-recording-path': true
-        }
-    }
-
-};
-
-const guacServer = new GuacamoleLite({}, {}, clientOptions);
-
-```
-
-### Query parameters
-Some connection options can be modified in the query:
-
-``
-ws://your-guacamole-server:8080/?token=token&width=1024&height=768&dpi=32
-``
-
-Settings from the query override default settings and settings from the token.
-By default only *width*, *height* and *dpi* can be set in query. Others are ignored.
-The list of whitelisted parameters can be modified in **clientOptions**:
-
-```javascript
-#!/usr/bin/env node
-
-const GuacamoleLite = require('guacamole-lite');
-
-const clientOptions = {
-    crypt: {
-        cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
-    },
-    allowedUnencryptedConnectionSettings: {
-        rdp: [
-            'width',
-            'height',
-            'dpi',
-            'create-drive-path'
-        ]
-    }
-};
-
-const guacServer = new GuacamoleLite({}, {}, clientOptions);
-
-```
-### Callbacks
-You may need to validate/modify connection parameters after the connection was established.
-
-For this example we will modify **token object** the following way:
-
-```json
-
-{
-    "expiration": 3510738000000,
-    "userId": 777,
-    "connection": {
-        "type": "rdp",
-        "settings": {
-            "hostname": "10.0.0.12",
-            "username": "Administrator",
-            "password": "pAsSwOrD",
-            "enable-drive": true
-        }
-    }
+    const json = JSON.stringify(data);
+    return Buffer.from(json).toString('base64');
 }
 
+const token = encryptToken(tokenObject);
+
+console.log("Websockets URL:");
+console.log(`ws://localhost:8080/?token=${encodeURIComponent(token)}`);
 ```
 
-As you see we have added **expiration** and **userId** which are not used by guacamole-lite itself, buy may be used by 
-your application built on top of it. Like in this example:
+The token is encrypted for security reasons because it contains sensitive information, such as login credentials to the
+remote host and to prevent tampering with the parameters which could lead to using the server as a proxy for malicious
+purposes (see [Security Considerations](#security-considerations)). For details on how to structure the parameters and
+implement encryption, refer to the [Client Options](docs/advanced-configuration.md#client-options) section in the
+advanced configuration documentation.
 
-```javascript
-#!/usr/bin/env node
+For practical examples of how to encrypt the token in different programming languages, check out to the
+[examples](examples) directory:
 
-const GuacamoleLite = require('guacamole-lite');
+- [Node.js Example](examples/encrypt_token.js)
+- [PHP Example](examples/encrypt_token.php)
+- [Python Example](examples/encrypt_token.py)
 
-const clientOptions = {
-    crypt: {
-        cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
-    },
-};
+## Security Considerations
 
-const callbacks = {
-    processConnectionSettings: function (settings, callback) {
-        if (settings.expiration < Date.now()) {
-            console.error('Token expired');
+Unlike the full `guacamole-client`, `guacamole-lite` does not maintain its own database for managing users, remote
+hosts, and credentials. Instead, it relies on the integrating application to supply these parameters. Since the
+transmission of these parameters occurs through potentially insecure channels, such as the client's browser, it is
+crucial to ensure their security and integrity. To address these concerns, `guacamole-lite` employs encrypted tokens to
+pass connection details.
 
-            return callback(new Error('Token expired'));
-        }
+An encrypted token is a secure method of transmitting information where the data is first converted into a ciphertext
+using an encryption algorithm and a secret key. This process ensures two critical aspects:
 
-        settings.connection['drive-path'] = '/tmp/guacamole_' + settings.userId;
+- **Authentication**: The encrypted token verifies that the connection parameters were indeed generated by the
+  application and have not been forged or tampered with by any third party.
 
-        callback(null, settings);
-    }
-};
+- **Confidentiality**: Sensitive information, such as login credentials to the remote host, remains concealed from the
+  client. Only `guacamole-lite` and the application that generated the token can decrypt and access the contained
+  information.
 
-const guacServer = new GuacamoleLite({}, {}, clientOptions, callbacks);
+For more detailed security guidelines and best practices, please refer to
+the [Security Considerations](docs/advanced-configuration.md#encryption-and-security) section in the advanced
+configuration documentation.
 
-```
+## Advanced Configuration
 
-In this example we have new object **callbacks** which contains function **processConnectionSettings**. This function 
-accepts **settings** which is basically slightly flattened **token object** and **callback**. 
-**Callback** in it's turn accepts two parameters: **err** (in case of an error) and **settings** which is modified 
-**token object** (we have added 'drive-path' in the example). **Callback** must be called at the end of the function.
+Most likely you will need to customize `guacamole-lite` beyond the basic setup. The advanced configuration options allow
+for fine-tuning of the WebSocket server, `guacd` communication, default connection settings, and more. Below is an
+outline of the advanced configuration topics covered in the documentation:
 
-Please note that **connection** property does not contain **rdp**, but instead contains everything that was previously 
-in **rpd**. 
+- [WebSocket Options](docs/advanced-configuration.md#websocket-options)
+    - [Configuration](docs/advanced-configuration.md#configuration)
+- [Guacd Options](docs/advanced-configuration.md#guacd-options)
+    - [Configuration](docs/advanced-configuration.md#configuration-1)
+- [Client Options](docs/advanced-configuration.md#client-options)
+    - [Encryption and Security](docs/advanced-configuration.md#encryption-and-security)
+    - [Connection Settings](docs/advanced-configuration.md#connection-settings)
+    - [Allowed Unencrypted Connection Settings in Query](docs/advanced-configuration.md#allowed-unencrypted-connection-settings-in-query)
+    - [Connection Types](docs/advanced-configuration.md#connection-types)
+    - [Logging](docs/advanced-configuration.md#logging)
+- [Callbacks](docs/advanced-configuration.md#callbacks)
+    - [`processConnectionSettings` Callback](docs/advanced-configuration.md#processconnectionsettings-callback)
+- [Events](docs/advanced-configuration.md#events)
+    - [`open` Event](docs/advanced-configuration.md#open-event)
+    - [`close` Event](docs/advanced-configuration.md#close-event)
+    - [`error` Event](docs/advanced-configuration.md#error-event)
+- [Integration with Node.js Frameworks](docs/advanced-configuration.md#integration-with-nodejs-frameworks)
+    - [Considerations for Integration](docs/advanced-configuration.md#considerations-for-integration)
+    - [Example of Integrating with Express.js](docs/advanced-configuration.md#example-of-integrating-with-expressjs)
+- [Additional Examples and Resources](docs/advanced-configuration.md#additional-examples-and-resources)
+    - [Contents of the Examples Directory](docs/advanced-configuration.md#contents-of-the-examples-directory)
 
-Also note the new fourth parameter (**callbacks**) in the last line with `new GuacamoleLite`.
+Each section provides detailed information and examples to help you tailor `guacamole-lite` to your specific needs.
+Whether you're integrating with existing Node.js frameworks, handling complex logging requirements, or setting up custom
+callbacks and events, the advanced configuration guide has you covered.
 
-### Events
-*guacamole-lite* also emits the following events:
-    
- - *open* - when connection to the host is established
- - *close* - when connection is closed
- - *error* - when error in connection occured
- 
-In this example we will use these events to send postbacks to our backend:
+## Testing
 
-```javascript
-#!/usr/bin/env node
-
-const GuacamoleLite = require('guacamole-lite');
-const Http = require('http');
-
-const clientOptions = {
-    crypt: {
-        cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
-    },
-};
-
-const guacServer = new GuacamoleLite({}, {}, clientOptions);
-
-guacServer.on('open', (clientConnection) => {
-    const url = 'http://our-backend-server/api/connection/open?userId=' + clientConnection.connectionSettings.userId
-    
-    Http.request(url).end();
-});
-
-guacServer.on('close', (clientConnection) => {
-    const url = 'http://our-backend-server/api/connection/close?userId=' + clientConnection.connectionSettings.userId
-    
-    Http.request(url).end();
-});
-
-guacServer.on('error', (clientConnection, error) => {
-    console.error(clientConnection, error);
-});
+`guacamole-lite` comes with a test suite to ensure the stability and reliability of the library. To run the tests:
 
 ```
-
-Note that **clientConnection** object is passed to all event listeners and can be used to access **connectionSettings** 
-(which is **token object**).
-
-### ExpressJS example
-
-```javascript
-#!/usr/bin/env node
-
-const GuacamoleLite = require('guacamole-lite');
-const express = require('express');
-const http = require('http');
-
-const app = express();
-
-const server = http.createServer(app);
-
-const guacdOptions = {
-    port: 4822 // port of guacd
-};
-
-const clientOptions = {
-    crypt: {
-        cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
-    }
-};
-
-const guacServer = new GuacamoleLite({server}, guacdOptions, clientOptions);
-
-server.listen(8080);
+npm test
 ```
 
+## Contributing
 
-### Log levels
+Contributions to `guacamole-lite` are welcome! If you're interested in contributing, you can:
 
-```javascript
-#!/usr/bin/env node
+- Report issues or suggest features
+  by [submitting an issue on GitHub](https://github.com/vadimpronin/guacamole-lite/issues).
+- Contribute code by forking the repository, making your changes, and creating a pull request.
 
-const GuacamoleLite = require('guacamole-lite');
+## Acknowledgements
 
-const websocketOptions = {
-    port: 8080 // we will accept connections to this port
-};
+Special thanks to the Guacamole team for creating the original Guacamole project and making it available under the
+Apache-2.0 license.
+I want to acknowledge all individual contributors to the project, who have invested their time and effort into
+improving `guacamole-lite`.
 
-const guacdOptions = {
-    port: 4822 // port of guacd
-};
+## License
 
-const clientOptions = {
-    crypt: {
-        cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
-    },
-    log: {
-        level: 'DEBUG'
-    }
-};
+`guacamole-lite` is made available under the Apache License, Version 2.0 (Apache-2.0), the same license as the original
+Apache Guacamole project. This license is a permissive open-source license that allows for broad freedom in usage and
+distribution.
 
-const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions);
-```
-
-**clientOptions.log.level** defines verbosity of logs. Possible values are:
-- *"QUIET"* - no logs
-- *"ERRORS"* - only errors
-- *"NORMAL"* - errors + minimal logs (startup and shutdown messages)
-- *"VERBOSE"*  - (**default**) normal + connection messages (opened, closed, guacd exchange, etc)
-- *"DEBUG"* - verbose + all OPCODES sent/received within guacamole sessions
-
-
-### Custom log functions
-
-By default *guacamole-lite* uses `console.log` and `console.error` functions for logging.
-You can redefine these functions by setting **clientOptions.log.stdLog**
-and **clientOptions.log.errorLog** like in the example below. Note that **clientOptions.log.level**
-is still applied, which means that messages that don't match desired log level won't be
-sent to your custom functions  
-
-```javascript
-#!/usr/bin/env node
-
-const GuacamoleLite = require('guacamole-lite');
-
-const websocketOptions = {
-    port: 8080 // we will accept connections to this port
-};
-
-const guacdOptions = {
-    port: 4822 // port of guacd
-};
-
-const clientOptions = {
-    crypt: {
-        cypher: 'AES-256-CBC',
-        key: 'MySuperSecretKeyForParamsToken12'
-    },
-    log: {
-        level: 'DEBUG',
-        stdLog: (...args) => {
-            console.log('[MyLog]', ...args)
-        },
-        errorLog: (...args) => {
-            console.error('[MyLog]', ...args)
-        }
-    }
-};
-
-const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions);
-```
-
-
-## Tests
-
-No tests yet :(
+For more details about the Apache-2.0 license and your rights under it, please see
+the [LICENSE](https://github.com/vadimpronin/guacamole-lite/blob/master/LICENSE) file included in the repository.
