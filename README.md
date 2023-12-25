@@ -8,7 +8,7 @@
 
 ### What is Guacamole?
 
-Apache Guacamole is a HTML5 web client for remote desktop environments using protocols such as VNC or RDP, SSH or
+Apache Guacamole is a HTML5 web client for remote desktop environments using protocols such as VNC, RDP, SSH or
 Telnet.
 
 ### Why use `guacamole-lite`?

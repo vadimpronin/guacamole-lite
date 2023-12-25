@@ -543,7 +543,29 @@ of `guacamole-lite`.
 
 ### Example Configuration
 
-Here is an example of how to define the `callbacks` object with the `processConnectionSettings` callback:
+Following is an example of how to define the `callbacks` object with the `processConnectionSettings` callback.
+
+Having these data encrypted in the token:
+
+```json
+
+{
+  "expiration": 3510738000000,
+  "userId": 777,
+  "connection": {
+    "type": "rdp",
+    "settings": {
+      "hostname": "10.0.0.12",
+      "username": "Administrator",
+      "password": "pAsSwOrD",
+      "enable-drive": true
+    }
+  }
+}
+```
+
+You can use the following `processConnectionSettings` callback to validate the token's expiration date and modify the
+connection settings:
 
 ```javascript
 const callbacks = {
@@ -720,16 +742,16 @@ configuration, and include scripts for encrypting tokens in various programming 
 
 The `examples` directory within the `guacamole-lite` project contains the following files:
 
-- `advanced_configuration.js`: Demonstrates how to set up `guacamole-lite` with advanced options, including custom
+- [advanced_configuration.js](../examples/advanced_configuration.js): Demonstrates how to set up `guacamole-lite` with advanced options, including custom
   connection settings and callbacks.
-- `basic_server.js`: Provides a simple example of how to get a `guacamole-lite` server up and running with minimal
+- [basic_server.js](../examples/basic_server.js): Provides a simple example of how to get a `guacamole-lite` server up and running with minimal
   configuration.
-- `encrypt_token.js`: Shows how to encrypt a connection token using Node.js, ensuring secure transmission of connection
+- [encrypt_token.js](../examples/encrypt_token.js): Shows how to encrypt a connection token using Node.js, ensuring secure transmission of connection
   parameters.
-- `encrypt_token.php`: A PHP script for encrypting the connection token, useful for applications with a PHP backend.
-- `encrypt_token.py`: A Python example for token encryption, catering to systems where Python is the server-side
+- [encrypt_token.php](../examples/encrypt_token.php): A PHP script for encrypting the connection token, useful for applications with a PHP backend.
+- [encrypt_token.py](../examples/encrypt_token.py): A Python example for token encryption, catering to systems where Python is the server-side
   language of choice.
-- `expressjs.js`: Illustrates how to integrate `guacamole-lite` with an Express.js application, combining web server
+- [expressjs.js](../examples/expressjs.js): Illustrates how to integrate `guacamole-lite` with an Express.js application, combining web server
   functionality with remote desktop capabilities.
 
 These examples are designed to be informative and easily adaptable to your specific use case. Whether you're just
