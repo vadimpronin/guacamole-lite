@@ -1,11 +1,15 @@
 {
   "name": "guacamole-lite",
-  "description": "Lite version of guacamole server in node.js. RDP/VNC client for HTML5 browsers",
-  "version": "0.7.2",
+  "description": "Library to create servers compatible with the Guacamole protocol. Guacamole is a web client for RDP/VNC/SSH/Telnet",
+  "version": "1.0.0",
   "keywords": [
     "guacamole",
+    "guacamole-client",
+    "guacamole-common-js",
     "rdp",
     "vnc",
+    "ssh",
+    "telnet",
     "remote desktop"
   ],
   "maintainers": [
@@ -16,11 +20,15 @@
   ],
   "dependencies": {
     "deep-extend": "^0.6.0",
-    "moment": "^2.17.1",
-    "ws": "^1.1.2"
+    "ws": "^8.15.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1"
   },
   "engines": {
-    "node": ">=6"
+    "node": ">=10.0.0"
   },
   "bugs": {
     "url": "https://github.com/vadimpronin/guacamole-lite/issues"
@@ -29,5 +37,8 @@
     "type": "git",
     "url": "https://github.com/vadimpronin/guacamole-lite.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "jest"
+  }
 }
