@@ -101,13 +101,26 @@ npm install guacamole-lite --save
 This will add `guacamole-lite` as a dependency to your `package.json` file and download it to the `node_modules`
 directory.
 
+## Before You Start
+
+Before you start, make sure you have `guacd` installed and running on your server.
+The easiest way to run `guacd` is to use the official Docker image:
+
+```sh
+docker run --name guacd -d -p 4822:4822 guacamole/guacd
+```
+
+Alternatively, you can install guacd from source. For more details, refer to the official documentation on
+[Installing guacamole-server](https://guacamole.apache.org/doc/gug/installing-guacamole.html#installing-guacamole-server)
+or `guacamole-server` [README](https://github.com/apache/guacamole-server/blob/master/README) on github.
+
 ## Quick Start Guide
 
 To get started with `guacamole-lite` and create a Guacamole-compatible server, follow the basic example below. For
 advanced configuration options, please refer to the relevant sections of
 the [advanced configuration documentation](docs/advanced-configuration.md).
 
-### Basic Server Setup
+### Basic `guacamole-lite` Server Setup
 
 Here's a minimal example to set up a `guacamole-lite` server:
 
@@ -223,7 +236,7 @@ using an encryption algorithm and a secret key. This process ensures two critica
   information.
 
 For more detailed security guidelines and best practices, please refer to
-the [Security Considerations](docs/advanced-configuration.md#encryption-and-security) section in the advanced
+the [Encryption and Security](docs/advanced-configuration.md#encryption-and-security) section in the advanced
 configuration documentation.
 
 ## Advanced Configuration
