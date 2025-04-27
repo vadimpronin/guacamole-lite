@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>guacamole-lite test</title>
+
+<style>
+  html,body { height:100%; margin:0 }
+  #display  { width:100%; height:100%; cursor:default }
+  .guac-hide-cursor { cursor:url('dot.gif'), default }
+</style>
+
+<!-- official guacamole-common-js bundle copied by the Dockerfile -->
+<script src="js/all.min.js"></script>
+
+<!-- The remote-desktop surface -->
+<div id="display"></div>
+
+<!-- Hidden textarea for clipboard integration -->
+<textarea id="clipboard-textarea" style="position: absolute; left: -9999px;"></textarea>
+
+<script src="js/token-generator.js"></script>
+<script src="js/guacamole-init.js"></script>
+
+<script>
+  (async () => {
+    const tokenObj = {
+      connection: {
+        type: "rdp",
+        settings: {
+          "hostname": "desktop-linux",
+          "username": "testuser",
+          "password": "Passw0rd!",
+          "security": "any",
+          "ignore-cert": true,
+          "enable-drive": true,
+          "drive-path": "/tmp/guac-drive",
+          "create-drive-path": true,
+          "enable-printing": true,
+          "audio": ["audio/L16;rate=44100"]
+        }
+      }
+    };
+
+    const token = await generateGuacamoleToken(tokenObj);
+    await initGuacamole(token);
+  })();
+</script>

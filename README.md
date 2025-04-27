@@ -273,11 +273,40 @@ callbacks and events, the advanced configuration guide has you covered.
 
 ## Testing
 
-`guacamole-lite` comes with a test suite to ensure the stability and reliability of the library. To run the tests:
+`guacamole-lite` comes with two ways to test:
 
-```
-npm test
-```
+1.  **Unit/Integration Tests:** A suite of tests is included to ensure the stability and reliability of the core library functions. To run these tests:
+
+    ```sh
+    npm test
+    ```
+
+2.  **End-to-End Testing Environment (`test-guac`):** For more comprehensive testing, the `test-guac` directory provides a full end-to-end environment using Docker Compose. This setup simulates a real-world deployment scenario.
+
+**Components:**
+* `guacd`: The core Guacamole proxy daemon.
+* `desktop-linux`: A sample Ubuntu Linux desktop with XFCE and XRDP installed, serving as the remote machine.
+* `guacamole-lite-server`: An instance of your `guacamole-lite` server running within a Node.js container.
+* `guacamole-lite-client`: A simple Nginx container serving an HTML page that uses the official `guacamole-common-js` library to connect to the `guacamole-lite-server`. It includes example code for generating the connection token (though this should be done server-side in production).
+
+**How to Use `test-guac`:**
+* Navigate to the `test-guac` directory:
+    ```sh
+    cd test-guac
+    ```
+* Build and start all containers in detached mode:
+    ```sh
+    make up
+    ```
+    *Alternatively, you can use `docker compose up --build -d`.*
+* Once the containers are running, you can access the test Guacamole client in your browser at `http://localhost:9090`. This page will automatically generate a token and attempt to connect to the `desktop-linux` container via the `guacamole-lite-server`.
+* To stop and remove the containers and associated volumes:
+    ```sh
+    make down
+    ```
+    *Alternatively, you can use `docker compose down -v --remove-orphans`.*
+
+This end-to-end setup is invaluable for testing the integration between the browser client, `guacamole-lite`, `guacd`, and the target remote desktop.
 
 ## Contributing
 

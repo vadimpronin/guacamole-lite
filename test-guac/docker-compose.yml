@@ -1,0 +1,33 @@
+services:
+  guacd:
+    image: guacamole/guacd:1.5.5
+    container_name: guacd
+    restart: unless-stopped
+    expose: [ "4822" ]
+
+  desktop-linux:
+    build: ./desktop-linux
+    container_name: desktop-linux
+    shm_size: 1g
+    expose: [ "3389" ]
+
+  guacamole-lite-server:
+    build:
+      context: ..
+      dockerfile: test-guac/guacamole-lite-server/Dockerfile
+    container_name: guacamole-lite-server
+    depends_on: [ guacd ]
+    environment:
+      GUACD_HOST: guacd
+      GUACD_PORT: 4822
+      ENCRYPTION_KEY: MySuperSecretKeyForParamsToken12
+    ports: [ "9091:8080" ]
+
+  guacamole-lite-client:
+    build:
+      context: ./guacamole-lite-client
+      args:
+        GUAC_VERSION: "1.5.5"
+    container_name: guac-lite-client
+    depends_on: [ guacamole-lite-server ]
+    ports: [ "9090:80" ]
