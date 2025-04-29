@@ -285,8 +285,8 @@ callbacks and events, the advanced configuration guide has you covered.
 
 **Components:**
 * `guacd`: The core Guacamole proxy daemon.
-* `desktop-linux`: A sample Ubuntu Linux desktop with XFCE and XRDP installed, serving as the remote machine.
-* `guacamole-lite-server`: An instance of your `guacamole-lite` server running within a Node.js container.
+* `desktop-linux`: A sample Ubuntu Linux desktop with RDP and VNC installed, serving as the remote machine.
+* `guacamole-lite-server`: An instance of `guacamole-lite` server running within a Node.js container.
 * `guacamole-lite-client`: A simple Nginx container serving an HTML page that uses the official `guacamole-common-js` library to connect to the `guacamole-lite-server`. It includes example code for generating the connection token (though this should be done server-side in production).
 
 **How to Use `test-guac`:**
