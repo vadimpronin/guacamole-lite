@@ -9,7 +9,9 @@ services:
     build: ./desktop-linux
     container_name: desktop-linux
     shm_size: 1g
-    expose: [ "3389" ]
+    expose:
+      - "3389"  # RDP Port
+      - "5900"  # VNC Port
 
   guacamole-lite-server:
     build:

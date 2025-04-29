@@ -3,10 +3,41 @@
 <title>guacamole-lite test</title>
 
 <style>
-  html,body { height:100%; margin:0 }
-  #display  { width:100%; height:100%; cursor:default }
-  .guac-hide-cursor { cursor:url('dot.gif'), default }
+  html, body { height: 100%; margin: 0; display: flex; flex-direction: column; }
+  #display { flex-grow: 1; width: 100%; cursor: default; }
+  .guac-hide-cursor { cursor: url('dot.gif'), default; }
+  #connection-form { padding: 10px; border-bottom: 1px solid #ccc; display: flex; gap: 15px; align-items: center; }
+  #remote-host-details { display: none; gap: 10px; }
+  #remote-host-details.visible { display: flex; }
+  label { margin-right: 5px; }
+  input, select, button { padding: 5px; }
 </style>
+
+<!-- Connection Form -->
+<div id="connection-form">
+  <label for="connect-target">Connect to:</label>
+  <select id="connect-target">
+    <option value="test-host" selected>Test Host (Linux Desktop)</option>
+    <option value="remote-host">Remote Host</option>
+  </select>
+
+  <label for="protocol">Protocol:</label>
+  <select id="protocol">
+    <option value="rdp" selected>RDP</option>
+    <option value="vnc">VNC</option>
+  </select>
+
+  <div id="remote-host-details">
+    <label for="remote-hostname">Host:</label>
+    <input type="text" id="remote-hostname" placeholder="hostname or IP">
+    <label for="remote-username">Username:</label>
+    <input type="text" id="remote-username">
+    <label for="remote-password">Password:</label>
+    <input type="password" id="remote-password">
+  </div>
+
+  <button id="connect-button">Connect</button>
+</div>
 
 <!-- official guacamole-common-js bundle copied by the Dockerfile -->
 <script src="js/all.min.js"></script>
@@ -21,26 +52,78 @@
 <script src="js/guacamole-init.js"></script>
 
 <script>
-  (async () => {
+  const connectTargetSelect = document.getElementById('connect-target');
+  const remoteHostDetailsDiv = document.getElementById('remote-host-details');
+  const connectButton = document.getElementById('connect-button');
+  const protocolSelect = document.getElementById('protocol');
+  const remoteHostnameInput = document.getElementById('remote-hostname');
+  const remoteUsernameInput = document.getElementById('remote-username');
+  const remotePasswordInput = document.getElementById('remote-password');
+
+  connectTargetSelect.addEventListener('change', () => {
+    if (connectTargetSelect.value === 'remote-host') {
+      remoteHostDetailsDiv.classList.add('visible');
+    } else {
+      remoteHostDetailsDiv.classList.remove('visible');
+    }
+  });
+
+  connectButton.addEventListener('click', async () => {
+    const target = connectTargetSelect.value;
+    const protocol = protocolSelect.value;
+    let connectionSettings;
+
+    if (target === 'test-host') {
+      connectionSettings = {
+        hostname: "desktop-linux", // Service name in docker-compose
+        username: "testuser",
+        password: "Passw0rd!",
+        security: "any",
+        "ignore-cert": true,
+        "enable-drive": protocol === 'rdp', // Drive redirection only for RDP
+        "drive-path": protocol === 'rdp' ? "/tmp/guac-drive" : undefined,
+        "create-drive-path": protocol === 'rdp',
+        "enable-printing": protocol === 'rdp', // Printing only for RDP
+        "audio": protocol === 'rdp' ? ["audio/L16;rate=44100"] : undefined // Audio only for RDP
+      };
+       // Adjust port based on protocol for test-host
+       if (protocol === 'vnc') {
+         connectionSettings.port = 5900; // Default VNC port
+       }
+       // RDP port is handled by default (3389) unless specified
+    } else { // remote-host
+      connectionSettings = {
+        hostname: remoteHostnameInput.value,
+        username: remoteUsernameInput.value,
+        password: remotePasswordInput.value,
+        // Add common settings or let Guacamole use defaults
+        "ignore-cert": protocol === 'rdp' ? true : undefined, // Common for RDP self-signed certs
+      };
+       // Add port setting if needed, Guacamole uses defaults (3389 for RDP, 5900 for VNC)
+    }
+
     const tokenObj = {
       connection: {
-        type: "rdp",
-        settings: {
-          "hostname": "desktop-linux",
-          "username": "testuser",
-          "password": "Passw0rd!",
-          "security": "any",
-          "ignore-cert": true,
-          "enable-drive": true,
-          "drive-path": "/tmp/guac-drive",
-          "create-drive-path": true,
-          "enable-printing": true,
-          "audio": ["audio/L16;rate=44100"]
-        }
+        type: protocol,
+        settings: connectionSettings
       }
     };
 
-    const token = await generateGuacamoleToken(tokenObj);
-    await initGuacamole(token);
-  })();
+    try {
+        // Clear previous display if any
+        const displayDiv = document.getElementById('display');
+        while (displayDiv.firstChild) {
+            displayDiv.removeChild(displayDiv.firstChild);
+        }
+
+        console.log("Generating token for:", tokenObj);
+        const token = await generateGuacamoleToken(tokenObj);
+        console.log("Token generated, initializing Guacamole...");
+        await initGuacamole(token, protocol); // Pass protocol to initGuacamole
+        console.log("Guacamole initialization called.");
+    } catch (error) {
+        console.error("Failed to connect:", error);
+        alert("Connection failed: " + error.message);
+    }
+  });
 </script>

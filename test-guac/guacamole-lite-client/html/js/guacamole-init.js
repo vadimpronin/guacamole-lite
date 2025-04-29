@@ -1,4 +1,4 @@
-async function initGuacamole(token) {
+async function initGuacamole(token, protocol) {
   /* ------------------------ initialise Guacamole ---------------------- */
   const tunnel = new Guacamole.WebSocketTunnel(`ws://${location.hostname}:9091/`);
   const client = new Guacamole.Client(tunnel);
@@ -35,8 +35,12 @@ async function initGuacamole(token) {
     };
   };
 
-  /* Connect (token is query parameter, add explicit audio request) */
-  const connectString = `token=${encodeURIComponent(token)}&GUAC_AUDIO=audio/L16`;
+  /* Connect (token is query parameter, add explicit audio request for RDP) */
+  // Construct connection string, adding audio only if RDP
+  let connectString = `token=${encodeURIComponent(token)}`;
+  if (protocol === 'rdp') {
+      connectString += `&GUAC_AUDIO=audio/L16`;
+  }
   client.connect(connectString);
 
   /* Disconnect cleanly when the tab is closed / reloaded */
