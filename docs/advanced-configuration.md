@@ -753,6 +753,8 @@ The `examples` directory within the `guacamole-lite` project contains the follow
   language of choice.
 - [expressjs.js](../examples/expressjs.js): Illustrates how to integrate `guacamole-lite` with an Express.js application, combining web server
   functionality with remote desktop capabilities.
+- [fastify.js](../examples/fastify.js): Illustrates how to integrate `guacamole-lite` with a Fastify application, combining web server
+  functionality with remote desktop capabilities.
 
 These examples are designed to be informative and easily adaptable to your specific use case. Whether you're just
 getting started with `guacamole-lite` or looking to implement more complex features, the examples directory is a
