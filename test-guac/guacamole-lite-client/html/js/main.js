@@ -160,6 +160,33 @@ function initializeGuacamoleClient(token, protocol) {
       };
     };
     
+    // Set up file download handler
+    client.onfile = (stream, mimetype, filename) => {
+      stream.sendAck("Ready", Guacamole.Status.Code.SUCCESS);
+      
+      const reader = new Guacamole.BlobReader(stream, mimetype);
+      
+      reader.onprogress = (length) => {
+        console.log(`Downloaded ${length} bytes of ${filename}`);
+      };
+      
+      reader.onend = () => {
+        // Automatically create a link and download the file
+        const file = reader.getBlob();
+        const url = URL.createObjectURL(file);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          console.log(`File download complete: ${filename}`);
+        }, 100);
+      };
+    };
+    
     // Set up mouse
     const mouse = new Guacamole.Mouse(client.getDisplay().getElement());
     mouse.onEach(['mousedown', 'mouseup', 'mousemove', 'mousewheel'],
