@@ -89,12 +89,28 @@ describe('WebSocket Server Tests', () => {
             // wsClient.send('select');
         });
 
-        mockGuacdServer.on('connect', (connection) => {
+        mockGuacdServer.once('connect', (connection) => {
             connection.on('handshake-instruction', (instruction) => {
                 expect(instruction).toContain('select');
                 wsClient.close();
                 done();
             });
         });
+    });
+
+    test('Query parameters override token settings', (done) => {
+        const token = generateValidToken();
+        let wsClient;
+        mockGuacdServer.once('connect', (connection) => {
+            connection.on('handshake-instruction', (instruction) => {
+                if (instruction[0] === 'size') {
+                    expect(instruction).toEqual(['size', '800', '600', '120']);
+                    wsClient.close();
+                    done();
+                }
+            });
+        });
+
+        wsClient = new WebSocket(`ws://localhost:${wsPort}/?token=${token}&width=800&height=600&dpi=120`);
     });
 });
