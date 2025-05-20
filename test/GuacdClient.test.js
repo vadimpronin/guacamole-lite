@@ -123,6 +123,18 @@ describe('GuacdClient Tests', () => {
         });
     });
 
+    test('Timezone instruction is sent when provided', (done) => {
+        guacdClient.connectionSettings.timezone = 'Europe/Berlin';
+        mockGuacdServer.once('connect', (connection) => {
+            connection.on('handshake-instruction', (instruction) => {
+                if (instruction[0] === 'timezone') {
+                    expect(instruction).toEqual(['timezone', 'Europe/Berlin']);
+                    done();
+                }
+            });
+        });
+    });
+
     // test('Inactivity Timeout', (done) => {
     //     mockGuacdServer.on('connect', (connection) => {
     //         connection.disableHeartBeats = true;
