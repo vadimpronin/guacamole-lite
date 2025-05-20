@@ -1,0 +1,79 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>guacamole-lite test</title>
+
+<link rel="stylesheet" href="css/style.css">
+
+<div id="app-container">
+  <!-- Connection Screen -->
+  <div id="connection-screen">
+    <div id="connection-form">
+      <h2 class="form-header">Guacamole Remote Connection</h2>
+      
+      <div class="form-row">
+        <label>Connect to:</label>
+        <div id="connect-target" class="radio-group">
+          <div class="radio-option">
+            <input type="radio" id="connect-target-test" name="connect-target" value="test-host" checked>
+            <label for="connect-target-test">Test Host</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="connect-target-remote" name="connect-target" value="remote-host">
+            <label for="connect-target-remote">Remote Host</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Protocol:</label>
+        <div id="protocol" class="radio-group">
+          <div class="radio-option">
+            <input type="radio" id="protocol-rdp" name="protocol" value="rdp" checked>
+            <label for="protocol-rdp">RDP</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="protocol-vnc" name="protocol" value="vnc">
+            <label for="protocol-vnc">VNC</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="remote-host-details">
+        <div class="form-row">
+          <label for="remote-hostname">Host:</label>
+          <input type="text" id="remote-hostname" placeholder="hostname or IP">
+        </div>
+        <div class="form-row">
+          <label for="remote-username">Username:</label>
+          <input type="text" id="remote-username">
+        </div>
+        <div class="form-row">
+          <label for="remote-password">Password:</label>
+          <input type="password" id="remote-password">
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top: 20px;">
+        <button id="connect-button">Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Display Screen -->
+  <div id="display-screen">
+    <div id="display-header">
+      <div id="display-title">Remote Connection</div>
+      <button id="close-button">Disconnect</button>
+    </div>
+    <!-- The remote-desktop surface -->
+    <div id="display"></div>
+  </div>
+</div>
+
+<!-- Hidden textarea for clipboard integration -->
+<textarea id="clipboard-textarea" style="position: absolute; left: -9999px;"></textarea>
+
+<!-- official guacamole-common-js bundle copied by the Dockerfile -->
+<script src="js/all.min.js"></script>
+<script src="js/token-generator.js"></script>
+<script src="js/main.js"></script>
