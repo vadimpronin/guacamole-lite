@@ -19,7 +19,10 @@ const clientOptions = {
         rdp: {
             'audio': ['audio/L16']
         }
-    }
+    },
+    log: {
+        level: 'DEBUG',
+    },
 };
 
 const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions);

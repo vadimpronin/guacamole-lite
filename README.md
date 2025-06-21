@@ -275,21 +275,27 @@ callbacks and events, the advanced configuration guide has you covered.
 
 `guacamole-lite` comes with two ways to test:
 
-1.  **Unit/Integration Tests:** A suite of tests is included to ensure the stability and reliability of the core library functions. To run these tests:
+1. **Unit/Integration Tests:** A suite of tests is included to ensure the stability and reliability of the core library
+   functions. To run these tests:
 
-    ```sh
-    npm test
-    ```
+   ```sh
+   npm test
+   ```
 
-2.  **End-to-End Testing Environment (`test-guac`):** For more comprehensive testing, the `test-guac` directory provides a full end-to-end environment using Docker Compose. This setup simulates a real-world deployment scenario.
+2. **End-to-End Testing Environment (`test-guac`):** For more comprehensive testing, the `test-guac` directory provides
+   a full end-to-end environment using Docker Compose. This setup simulates a real-world deployment scenario.
 
 **Components:**
+
 * `guacd`: The core Guacamole proxy daemon.
 * `desktop-linux`: A sample Ubuntu Linux desktop with RDP and VNC installed, serving as the remote machine.
 * `guacamole-lite-server`: An instance of `guacamole-lite` server running within a Node.js container.
-* `guacamole-lite-client`: A simple Nginx container serving an HTML page that uses the official `guacamole-common-js` library to connect to the `guacamole-lite-server`. It includes example code for generating the connection token (though this should be done server-side in production).
+* `guacamole-lite-client`: A simple Nginx container serving an HTML page that uses the official `guacamole-common-js`
+  library to connect to the `guacamole-lite-server`. It includes example code for generating the connection
+  token (though this should be done server-side in production).
 
 **How to Use `test-guac`:**
+
 * Navigate to the `test-guac` directory:
     ```sh
     cd test-guac
@@ -298,15 +304,18 @@ callbacks and events, the advanced configuration guide has you covered.
     ```sh
     make up
     ```
-    *Alternatively, you can use `docker compose up --build -d`.*
-* Once the containers are running, you can access the test Guacamole client in your browser at `http://localhost:9090`. This page will automatically generate a token and attempt to connect to the `desktop-linux` container via the `guacamole-lite-server`.
+  *Alternatively, you can use `docker compose up --build -d`.*
+* Once the containers are running, you can access the test Guacamole client in your browser at `http://localhost:9090`.
+  This page will automatically generate a token and attempt to connect to the `desktop-linux` container via the
+  `guacamole-lite-server`.
 * To stop and remove the containers and associated volumes:
     ```sh
     make down
     ```
-    *Alternatively, you can use `docker compose down -v --remove-orphans`.*
+  *Alternatively, you can use `docker compose down -v --remove-orphans`.*
 
-This end-to-end setup is invaluable for testing the integration between the browser client, `guacamole-lite`, `guacd`, and the target remote desktop.
+This end-to-end setup is invaluable for testing the integration between the browser client, `guacamole-lite`, `guacd`,
+and the target remote desktop.
 
 ## Contributing
 
@@ -315,6 +324,33 @@ Contributions to `guacamole-lite` are welcome! If you're interested in contribut
 - Report issues or suggest features
   by [submitting an issue on GitHub](https://github.com/vadimpronin/guacamole-lite/issues).
 - Contribute code by forking the repository, making your changes, and creating a pull request.
+
+### Development Setup
+
+To work on the code, clone the repository and install the dependencies:
+
+```sh
+git clone https://github.com/vadimpronin/guacamole-lite.git
+cd guacamole-lite
+npm install
+```
+
+#### Managing Vendored Dependencies
+
+This project includes some third-party code directly in the `lib/vendor` directory. This approach is used for critical
+dependencies, like the official `Guacamole.Parser`, which are not published as standard packages on npm. This ensures
+reliability and avoids complex installation issues.
+
+**Please do not edit vendored files directly.**
+
+To update these dependencies to their latest versions from their source repositories, run the dedicated npm script:
+
+```sh
+npm run update-vendors
+```
+
+This command will automatically download the files specified in `scripts/update-vendors.js` and place them in the
+correct location.
 
 ## Acknowledgements
 

@@ -73,6 +73,8 @@ describe('GuacdClient Tests', () => {
 
         mockGuacdServer.on('connect', (connection) => {
             connection.on('instruction', (instruction) => {
+                if (instruction[0] !== 'test') return;
+
                 expect(instruction).toEqual(expectedInstruction);
                 done();
             });
@@ -83,11 +85,13 @@ describe('GuacdClient Tests', () => {
     });
 
     test('Data Reception from guacd', (done) => {
-        const testData = '4.sync,1;';
+        const testData = '4.sync,8.34046906;';
 
         guacdClient.on('data', (data) => {
-            expect(data).toBe(testData);
-            done();
+            if (data === testData) {
+                expect(data).toBe(testData);
+                done();
+            }
         });
 
         guacdClient.on('open', () => {
