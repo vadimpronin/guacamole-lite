@@ -5,69 +5,97 @@
 <link rel="stylesheet" href="css/style.css">
 
 <div id="app-container">
-  <!-- Connection Screen -->
-  <div id="connection-screen">
-    <div id="connection-form">
-      <h2 class="form-header">Guacamole Remote Connection</h2>
-      
-      <div class="form-row">
-        <label>Connect to:</label>
-        <div id="connect-target" class="radio-group">
-          <div class="radio-option">
-            <input type="radio" id="connect-target-test" name="connect-target" value="test-host" checked>
-            <label for="connect-target-test">Test Host</label>
-          </div>
-          <div class="radio-option">
-            <input type="radio" id="connect-target-remote" name="connect-target" value="remote-host">
-            <label for="connect-target-remote">Remote Host</label>
-          </div>
-        </div>
-      </div>
+    <!-- Connection Screen -->
+    <div id="connection-screen">
+        <div id="connection-form">
+            <h2 class="form-header">Guacamole Remote Connection</h2>
 
-      <div class="form-row">
-        <label>Protocol:</label>
-        <div id="protocol" class="radio-group">
-          <div class="radio-option">
-            <input type="radio" id="protocol-rdp" name="protocol" value="rdp" checked>
-            <label for="protocol-rdp">RDP</label>
-          </div>
-          <div class="radio-option">
-            <input type="radio" id="protocol-vnc" name="protocol" value="vnc">
-            <label for="protocol-vnc">VNC</label>
-          </div>
-        </div>
-      </div>
+            <div class="form-row">
+                <label>Connection Type:</label>
+                <div id="connection-type" class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="connection-type-new" name="connection-type" value="new">
+                        <label for="connection-type-new">New Connection</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="connection-type-join" name="connection-type" value="join">
+                        <label for="connection-type-join">Join Connection</label>
+                    </div>
+                </div>
+            </div>
 
-      <div id="remote-host-details">
-        <div class="form-row">
-          <label for="remote-hostname">Host:</label>
-          <input type="text" id="remote-hostname" placeholder="hostname or IP">
-        </div>
-        <div class="form-row">
-          <label for="remote-username">Username:</label>
-          <input type="text" id="remote-username">
-        </div>
-        <div class="form-row">
-          <label for="remote-password">Password:</label>
-          <input type="password" id="remote-password">
-        </div>
-      </div>
+            <div class="form-row">
+                <label>Protocol:</label>
+                <div id="protocol" class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="protocol-rdp" name="protocol" value="rdp" checked>
+                        <label for="protocol-rdp">RDP</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="protocol-vnc" name="protocol" value="vnc">
+                        <label for="protocol-vnc">VNC</label>
+                    </div>
+                </div>
+            </div>
 
-      <div class="form-row" style="margin-top: 20px;">
-        <button id="connect-button">Connect</button>
-      </div>
+            <div class="form-row">
+                <label>Connect to:</label>
+                <div id="connect-target" class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="connect-target-test" name="connect-target" value="test-host" checked>
+                        <label for="connect-target-test">Test Host</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="connect-target-remote" name="connect-target" value="remote-host">
+                        <label for="connect-target-remote">Remote Host</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="remote-host-details">
+                <div class="form-row">
+                    <label for="remote-hostname">Host:</label>
+                    <input type="text" id="remote-hostname" placeholder="hostname or IP">
+                </div>
+                <div class="form-row">
+                    <label for="remote-username">Username:</label>
+                    <input type="text" id="remote-username">
+                </div>
+                <div class="form-row">
+                    <label for="remote-password">Password:</label>
+                    <input type="password" id="remote-password">
+                </div>
+            </div>
+
+            <div id="join-connection-details">
+                <div class="form-row">
+                    <label for="connection-id">Connection ID:</label>
+                    <input type="text" id="connection-id" placeholder="Enter connection ID to join">
+                </div>
+                <div class="form-row">
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="read-only" value="true">
+                        <label for="read-only">Read-only mode</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row" style="margin-top: 20px;">
+                <button id="connect-button">Connect</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Display Screen -->
-  <div id="display-screen">
-    <div id="display-header">
-      <div id="display-title">Remote Connection</div>
-      <button id="close-button">Disconnect</button>
+    <!-- Display Screen -->
+    <div id="display-screen">
+        <div id="display-header">
+            <div id="display-title">Remote Connection</div>
+            <span id="display-uuid" title="Click to copy Connection ID"></span>
+            <button id="close-button">Disconnect</button>
+        </div>
+        <!-- The remote-desktop surface -->
+        <div id="display"></div>
     </div>
-    <!-- The remote-desktop surface -->
-    <div id="display"></div>
-  </div>
 </div>
 
 <!-- Hidden textarea for clipboard integration -->
