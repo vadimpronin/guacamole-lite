@@ -12,6 +12,7 @@
     - [Connection Settings](#connection-settings)
     - [Allowed Unencrypted Connection Settings in Query](#allowed-unencrypted-connection-settings-in-query)
     - [Connection Types](#connection-types)
+    - [Joining Existing Connections](#joining-existing-connections)
     - [Logging](#logging)
 - [Callbacks](#callbacks)
     - [`processConnectionSettings` Callback](#processconnectionsettings-callback)
@@ -103,7 +104,7 @@ the [net documentation](https://nodejs.org/api/net.html#netcreateconnectionpath-
 ## Client Options
 
 The `clientOptions` object is where you define the behavior and capabilities of your `guacamole-lite` instance. It
-allows you to set up encryption for secure communication, establish default settings for various connection types,
+allows you to set up encryption for secure token handling, establish default settings for various connection types,
 configure logging levels, and specify which connection settings can be overridden by query parameters.
 
 Here's a high-level view of the `clientOptions` structure:
@@ -240,6 +241,9 @@ parameters such as hostname, port, and protocol-specific options like screen res
 To manage these settings flexibly, `guacamole-lite` merges them from three sources: default settings, encrypted tokens,
 and query parameters.
 
+The `connection` object in the token must contain either a `type` property (for creating a new connection to RDP, VNC,
+etc.) or a `join` property (for joining an existing connection by its ID). These two properties are mutually exclusive.
+
 #### Merging Connection Settings
 
 The `connectionDefaultSettings` within `clientOptions` serve as a baseline for all connections. These defaults can be
@@ -330,6 +334,10 @@ const clientOptions = {
 In this configuration, `color-depth` has been added to the list of allowed unencrypted settings for VNC connections.
 Even though `width`, `height`, and `dpi` are allowed by default, they must be explicitly included in your whitelist if
 you wish to allow them to be overridden in the query string, otherwise they will be ignored.
+
+In addition to protocol-specific keys like `rdp` or `vnc`, you can define a special `join` key. This key's value should
+be an array of parameter names (like `['read-only']`) that are allowed to be overridden in the query string when a
+client is joining an existing session.
 
 #### Sending Multiple Values in Query
 
@@ -425,6 +433,69 @@ Both connection parameters and client handshake instructions can be mixed in the
 For a more comprehensive example and comments on configuring `connectionDefaultSettings`, please see
 the [advanced_configuration.js example](../examples/advanced_configuration.js) included with `guacamole-lite`.
 
+---
+
+### Joining Existing Connections
+
+`guacamole-lite` supports the Guacamole protocol's feature for joining existing, active connections. This is useful for
+scenarios like session sharing, screen sharing, or administrative observation. Instead of specifying a protocol `type`,
+the client provides the unique ID of the connection to be joined.
+
+#### Token Structure for Joining a Connection
+
+To join an existing connection, the `connection` object within the encrypted token must contain a `join` property. The
+`type` property must be omitted.
+
+```json
+{
+  "connection": {
+    "join": "$b447679c-0541-4b3d-821b-74389e9dfb16",
+    "settings": {
+      "read-only": true
+    }
+  }
+}
+```
+
+- **`join`**: The unique ID of the active connection to join. This ID is provided to the initial client by `guacd` upon
+  a successful connection. On the server side, it can be captured via the `open` event on the `guacamole-lite` server
+  instance. On the client side (`guacamole-common-js`), this ID is received via the `onuuid` event on the
+  `Guacamole.Tunnel` object, which can then be displayed to the user for session sharing.
+
+  ```javascript
+  const tunnel = new Guacamole.WebSocketTunnel('ws://...');
+  
+  tunnel.onuuid = function(uuid) {
+      console.log("Connected with session ID:", uuid);
+      // You can now store this UUID or display it to the user
+      // so they can share it for others to join the session.
+  };
+  
+  const client = new Guacamole.Client(tunnel);
+  // ... rest of the client setup
+  ```
+
+- **`settings`**: An object containing parameters for the joining session. For join operations, this is typically
+  limited to the `read-only` parameter.
+    - **`read-only`**: If set to `true`, the joining client will be in view-only mode and cannot interact with the
+      remote desktop.
+
+#### Overriding `read-only` via Query Parameter
+
+The `read-only` setting can also be controlled via a query parameter, provided it is whitelisted in
+the `allowedUnencryptedConnectionSettings`.
+
+```javascript
+const clientOptions = {
+    // ...
+    allowedUnencryptedConnectionSettings: {
+        join: ['read-only'] // Allow 'read-only' to be passed in the query for join operations
+    }
+};
+```
+
+With this configuration, a client can join in read-only mode by appending `&read-only=true` to the WebSocket URL,
+overriding any value set in the token.
 
 ---
 
@@ -600,7 +671,8 @@ encounters an error. The primary events emitted by `guacamole-lite` are `open`, 
 
 The `open` event is emitted when a connection to the remote desktop host (via `guacd`) is successfully established. This
 event signifies that the initial handshake has been completed and the client is ready to start sending and receiving
-data.
+data. The `clientConnection` object passed to the event handler also contains the `guacamoleConnectionId` after the
+handshake with `guacd` is complete. This ID is essential if you want to allow other users to join this specific session.
 
 ### `close` Event
 
