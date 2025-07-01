@@ -157,10 +157,15 @@ the server. The connection parameters are passed in an encrypted token in the qu
 ws://your-guacamole-server:8080/?token=token
 ```
 
-The encrypted token is a JSON object that is **base64-encoded and encrypted**. It contains the necessary parameters for
-establishing a remote desktop like in the example below:
+The encrypted token is a JSON object that is **base64-encoded and encrypted**. It can be used to either create a new
+connection or join an existing one.
 
-```js
+#### Creating a New Connection
+
+To create a new remote desktop session, the `connection` object in your token must include a `type` property and the
+necessary `settings` for that protocol.
+
+```javascript
 const crypto = require('crypto');
 
 const CIPHER = 'aes-256-cbc';
@@ -199,19 +204,64 @@ function encryptToken(value) {
 }
 
 const token = encryptToken(tokenObject);
-
-console.log("Websockets URL:");
 console.log(`ws://localhost:8080/?token=${encodeURIComponent(token)}`);
 ```
 
-The token is encrypted for security reasons because it contains sensitive information, such as login credentials to the
-remote host and to prevent tampering with the parameters which could lead to using the server as a proxy for malicious
-purposes (see [Security Considerations](#security-considerations)). For details on how to structure the parameters and
-implement encryption, refer to the [Client Options](docs/advanced-configuration.md#client-options) section in the
-advanced configuration documentation.
+#### Joining an Existing Connection
 
-For practical examples of how to encrypt the token in different programming languages, check out to the
-[examples](examples) directory:
+To join an active session, the `connection` object must instead specify the `join` property with the unique ID of the
+session you wish to join. This is mutually exclusive with the `type` property.
+
+```javascript
+const crypto = require('crypto');
+
+const CIPHER = 'aes-256-cbc';
+const SECRET_KEY = 'MySuperSecretKeyForParamsToken12';
+
+const tokenObject = {
+    connection: {
+        join: "$b447679c-0541-4b3d-821b-74389e9dfb16",
+        settings: {
+            "read-only": true
+        }
+    }
+};
+
+function encryptToken(value) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(CIPHER, Buffer.from(SECRET_KEY), iv);
+
+    let encrypted = cipher.update(JSON.stringify(value), 'utf8', 'base64');
+    encrypted += cipher.final('base64');
+
+    const data = {
+        iv: iv.toString('base64'),
+        value: encrypted
+    };
+
+    const json = JSON.stringify(data);
+    return Buffer.from(json).toString('base64');
+}
+
+const token = encryptToken(tokenObject);
+console.log(`ws://localhost:8080/?token=${encodeURIComponent(token)}`);
+```
+
+The connection ID is provided by the server when the initial session is established. For more details on obtaining this
+ID and other join-specific options, please see
+the [Joining Existing Connections](docs/advanced-configuration.md#joining-existing-connections) section in the advanced
+configuration documentation.
+
+#### Token Encryption
+
+The token is encrypted for security reasons because it contains sensitive information, such as login credentials to the
+remote host, and to prevent tampering with the parameters, which could lead to using the server as a proxy for malicious
+purposes (see [Security Considerations](#security-considerations)).
+
+For details on how to structure the parameters and implement encryption, refer to
+the [Client Options](docs/advanced-configuration.md#client-options) section in the advanced configuration documentation.
+For practical examples of how to encrypt the token in different programming languages, check out
+the [examples](examples) directory:
 
 - [Node.js Example](examples/encrypt_token.js)
 - [PHP Example](examples/encrypt_token.php)
@@ -254,6 +304,7 @@ outline of the advanced configuration topics covered in the documentation:
     - [Connection Settings](docs/advanced-configuration.md#connection-settings)
     - [Allowed Unencrypted Connection Settings in Query](docs/advanced-configuration.md#allowed-unencrypted-connection-settings-in-query)
     - [Connection Types](docs/advanced-configuration.md#connection-types)
+    - [Joining Existing Connections](docs/advanced-configuration.md#joining-existing-connections)
     - [Logging](docs/advanced-configuration.md#logging)
 - [Callbacks](docs/advanced-configuration.md#callbacks)
     - [`processConnectionSettings` Callback](docs/advanced-configuration.md#processconnectionsettings-callback)
