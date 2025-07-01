@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const Net = require('net');
-const GuacamoleParser = require('../lib/vendor/GuacamoleParser.js');
+const GuacamoleParser = require('../../lib/vendor/GuacamoleParser.js');
 
 // Opcodes that are part of the initial handshake
 const handShakeOpcodes = [

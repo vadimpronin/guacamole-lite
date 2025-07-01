@@ -1,7 +1,7 @@
 const GuacdClient = require('../lib/GuacdClient');
-const MockGuacdServer = require('./MockGuacdServer');
+const MockGuacdServer = require('./helpers/MockGuacdServer');
 const {LOGLEVEL, Logger} = require("../lib/Logger");
-const {TESTS_LOGLEVEL} = require("./testHelpers");
+const {TESTS_LOGLEVEL} = require("./helpers/testHelpers");
 
 describe('GuacdClient Tests', () => {
     let mockGuacdServer;

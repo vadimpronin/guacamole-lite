@@ -1,7 +1,7 @@
-const Server = require('../lib/Server.js');
+const Server = require('../../lib/Server.js');
 const {WebSocket} = require('ws');
-const Crypt = require('../lib/Crypt.js');
-const {LOGLEVEL} = require("../lib/Logger");
+const Crypt = require('../../lib/Crypt.js');
+const {LOGLEVEL} = require("../../lib/Logger");
 
 const TESTS_LOGLEVEL = LOGLEVEL.QUIET;
 

@@ -1,7 +1,7 @@
 const {WebSocket} = require('ws');
-const MockGuacdServer = require('./MockGuacdServer');
+const MockGuacdServer = require('./helpers/MockGuacdServer');
 
-const {startServer, createWsClient, generateValidToken} = require('./testHelpers');
+const {startServer, createWsClient, generateValidToken} = require('./helpers/testHelpers');
 
 describe('WebSocket Server Tests', () => {
     let mockGuacdServer;

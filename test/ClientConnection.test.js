@@ -1,36 +1,9 @@
 const ClientConnection = require('../lib/ClientConnection');
-const MockGuacdServer = require('./MockGuacdServer');
+const MockGuacdServer = require('./helpers/MockGuacdServer');
+const MockWebSocket = require('./helpers/MockWebSocket');
 const {LOGLEVEL, Logger} = require("../lib/Logger");
-const {TESTS_LOGLEVEL, generateValidToken} = require("./testHelpers");
+const {TESTS_LOGLEVEL, generateValidToken} = require("./helpers/testHelpers");
 const Crypt = require('../lib/Crypt');
-const EventEmitter = require('events');
-
-// Mock WebSocket implementation
-class MockWebSocket extends EventEmitter {
-    constructor() {
-        super();
-        this.readyState = 1; // OPEN
-        this.CLOSED = 3;
-        this.CLOSING = 2;
-        this.messages = [];
-    }
-
-    send(data, options, callback) {
-        this.messages.push(data);
-        if (callback) {
-            setTimeout(callback, 0);
-        }
-    }
-
-    close() {
-        this.readyState = this.CLOSED;
-        this.emit('close');
-    }
-
-    removeAllListeners(event) {
-        super.removeAllListeners(event);
-    }
-}
 
 describe('ClientConnection Tests', () => {
     let mockGuacdServer;
@@ -202,6 +175,28 @@ describe('ClientConnection Tests', () => {
             expect(connection).toBe(clientConnection);
             expect(clientConnection.guacdClient).toBeDefined();
             done();
+        });
+
+        clientConnection.connect({ port: guacdPort, host: '127.0.0.1' });
+    });
+
+    test('Forwards connection ID to client with empty opcode upon ready', (done) => {
+        const expectedConnectionId = '$f1cdf63f-1b34-45b5-9a38-e2a81c80ccc5';
+        const GuacamoleParser = require('../lib/vendor/GuacamoleParser');
+        // The expected instruction is an empty opcode ('') followed by the connection ID
+        const expectedInstruction = GuacamoleParser.toInstruction(['', expectedConnectionId]);
+
+        clientConnection = createClientConnection();
+
+        clientConnection.on('ready', () => {
+            // After the 'ready' event, the Guacamole connection ID should have been
+            // received from guacd and sent to the WebSocket client.
+
+            // Allow a moment for the event loop to process the message passing.
+            setTimeout(() => {
+                expect(mockWebSocket.messages).toContain(expectedInstruction);
+                done();
+            }, 50);
         });
 
         clientConnection.connect({ port: guacdPort, host: '127.0.0.1' });
