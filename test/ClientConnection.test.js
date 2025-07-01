@@ -114,7 +114,7 @@ describe('ClientConnection Tests', () => {
         expect(clientConnection.connectionId).toBe(1);
         expect(clientConnection.state).toBe(1); // STATE_OPEN
         expect(clientConnection.webSocket).toBe(mockWebSocket);
-        expect(clientConnection.connectionType).toBe('rdp');
+        expect(clientConnection.connectionSelector).toBe('rdp');
         expect(clientConnection.lastActivity).toBeDefined();
     });
 
@@ -140,7 +140,7 @@ describe('ClientConnection Tests', () => {
             callbacks
         );
 
-        expect(clientConnection.connectionType).toBe('rdp');
+        expect(clientConnection.connectionSelector).toBe('rdp');
         expect(clientConnection.connectionSettings.connection.hostname).toBe('192.168.1.100');
         expect(clientConnection.connectionSettings.connection.username).toBe('testuser');
     });
@@ -489,7 +489,7 @@ describe('ClientConnection Tests', () => {
                         callbacks
                     );
 
-                    expect(clientConnection.connectionType).toBe(type);
+                    expect(clientConnection.connectionSelector).toBe(type);
                     expect(clientConnection.connectionSettings.connection.port).toBe(tokenObject.connection.settings.port);
                 });
             });
@@ -928,7 +928,7 @@ describe('ClientConnection Tests', () => {
                 );
 
                 // Should have undefined connection type
-                expect(clientConnection.connectionType).toBeUndefined();
+                expect(clientConnection.connectionSelector).toBeUndefined();
                 expect(clientConnection.state).toBe(1); // STATE_OPEN
             });
 
@@ -964,7 +964,7 @@ describe('ClientConnection Tests', () => {
                 );
 
                 // Should have the unsupported connection type
-                expect(clientConnection.connectionType).toBe('unsupported_protocol');
+                expect(clientConnection.connectionSelector).toBe('unsupported_protocol');
                 expect(clientConnection.state).toBe(1); // STATE_OPEN
                 // Connection settings should contain hostname from token
                 expect(clientConnection.connectionSettings.connection.hostname).toBe('192.168.1.100');
@@ -988,7 +988,7 @@ describe('ClientConnection Tests', () => {
                     callbacks
                 );
 
-                expect(clientConnection.connectionType).toBe('rdp');
+                expect(clientConnection.connectionSelector).toBe('rdp');
                 expect(clientConnection.connectionSettings.connection).toBeDefined();
                 // Should have defaults applied
                 expect(clientConnection.connectionSettings.connection.width).toBe(1024);
@@ -1559,7 +1559,7 @@ describe('ClientConnection Tests', () => {
                         callbacks
                     );
 
-                    expect(clientConnection.connectionType).toBe('rdp');
+                    expect(clientConnection.connectionSelector).toBe('rdp');
                     expect(clientConnection.connectionSettings.connection['param999']).toBe('value999');
                 });
             });
