@@ -56,9 +56,22 @@ const generateNewConnectionToken = () => {
     return crypt.encrypt(tokenObject);
 };
 
+const generateJoinConnectionToken = (connectionId, readOnly = false) => {
+    const tokenObject = {
+        connection: {
+            join: connectionId,
+            settings: readOnly ? { 'read-only': readOnly } : {}
+        }
+    };
+
+    const crypt = new Crypt(clientOptions.crypt.cypher, clientOptions.crypt.key);
+    return crypt.encrypt(tokenObject);
+};
+
 module.exports = {
     startServer,
     createWsClient,
     generateNewConnectionToken,
+    generateJoinConnectionToken,
     TESTS_LOGLEVEL
 };

@@ -1,7 +1,7 @@
 const {WebSocket} = require('ws');
 const MockGuacdServer = require('./helpers/MockGuacdServer');
 
-const {startServer, createWsClient, generateNewConnectionToken} = require('./helpers/testHelpers');
+const {startServer, createWsClient, generateNewConnectionToken, generateJoinConnectionToken} = require('./helpers/testHelpers');
 
 describe('WebSocket Server Tests', () => {
     let mockGuacdServer;
@@ -184,5 +184,249 @@ describe('WebSocket Server Tests', () => {
         wsClient.on('error', (err) => {
             done(err); // Fail test on connection error
         });
+    });
+
+    describe('Join Existing Connection Tests', () => {
+        test('Join existing connection functionality', (done) => {
+            let wsClient1, wsClient2;
+            let firstConnectionId;
+            let connectionsReady = 0;
+
+            const checkCompletion = () => {
+                connectionsReady++;
+                if (connectionsReady === 2) {
+                    setTimeout(() => {
+                        // Both connections should be active
+                        expect(server.activeConnections.size).toBe(2);
+                        
+                        // Verify the second connection is joining the first
+                        const connections = Array.from(server.activeConnections.values());
+                        const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
+                        expect(joinConnection).toBeDefined();
+                        expect(joinConnection.connectionSettings.connection.join).toBe(firstConnectionId);
+                        
+                        wsClient1.close();
+                        wsClient2.close();
+                        done();
+                    }, 100);
+                }
+            };
+
+            // Create first connection (new connection)
+            wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
+            
+            server.on('open', (clientConnection) => {
+                if (!firstConnectionId) {
+                    // This is the first connection
+                    firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
+                    expect(firstConnectionId).toBeDefined();
+                    checkCompletion();
+                    
+                    // Now create the second connection that joins the first
+                    setTimeout(() => {
+                        const joinToken = generateJoinConnectionToken(firstConnectionId);
+                        wsClient2 = createWsClient(wsPort, joinToken);
+                    }, 50);
+                } else {
+                    // This is the join connection
+                    checkCompletion();
+                }
+            });
+        }, 10000);
+
+        test('Join connection with read-only parameter from token', (done) => {
+            let wsClient1, wsClient2;
+            let firstConnectionId;
+            let connectionsReady = 0;
+
+            const checkCompletion = () => {
+                connectionsReady++;
+                if (connectionsReady === 2) {
+                    setTimeout(() => {
+                        expect(server.activeConnections.size).toBe(2);
+                        
+                        const connections = Array.from(server.activeConnections.values());
+                        const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
+                        expect(joinConnection).toBeDefined();
+                        expect(joinConnection.connectionSettings.connection['read-only']).toBe(true);
+                        
+                        wsClient1.close();
+                        wsClient2.close();
+                        done();
+                    }, 100);
+                }
+            };
+
+            wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
+            
+            server.on('open', (clientConnection) => {
+                if (!firstConnectionId) {
+                    firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
+                    checkCompletion();
+                    
+                    setTimeout(() => {
+                        const joinToken = generateJoinConnectionToken(firstConnectionId, true);
+                        wsClient2 = createWsClient(wsPort, joinToken);
+                    }, 50);
+                } else {
+                    checkCompletion();
+                }
+            });
+        }, 10000);
+
+        test('Join connection with read-only parameter from query string', (done) => {
+            let wsClient1, wsClient2;
+            let firstConnectionId;
+            let connectionsReady = 0;
+
+            const checkCompletion = () => {
+                connectionsReady++;
+                if (connectionsReady === 2) {
+                    setTimeout(() => {
+                        expect(server.activeConnections.size).toBe(2);
+                        
+                        const connections = Array.from(server.activeConnections.values());
+                        const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
+                        expect(joinConnection).toBeDefined();
+                        expect(joinConnection.connectionSettings.connection['read-only']).toBe('true');
+                        
+                        wsClient1.close();
+                        wsClient2.close();
+                        done();
+                    }, 100);
+                }
+            };
+
+            wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
+            
+            server.on('open', (clientConnection) => {
+                if (!firstConnectionId) {
+                    firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
+                    checkCompletion();
+                    
+                    setTimeout(() => {
+                        const joinToken = generateJoinConnectionToken(firstConnectionId);
+                        const url = `ws://localhost:${wsPort}/?token=${joinToken}&read-only=true`;
+                        wsClient2 = new WebSocket(url);
+                    }, 50);
+                } else {
+                    checkCompletion();
+                }
+            });
+        }, 10000);
+
+        test('Join connection ignores non-read-only query parameters', (done) => {
+            let wsClient1, wsClient2;
+            let firstConnectionId;
+            let connectionsReady = 0;
+
+            const checkCompletion = () => {
+                connectionsReady++;
+                if (connectionsReady === 2) {
+                    setTimeout(() => {
+                        expect(server.activeConnections.size).toBe(2);
+                        
+                        const connections = Array.from(server.activeConnections.values());
+                        const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
+                        expect(joinConnection).toBeDefined();
+                        
+                        // Should have read-only but not width/height
+                        expect(joinConnection.connectionSettings.connection['read-only']).toBe('true');
+                        expect(joinConnection.connectionSettings.connection.width).toBeUndefined();
+                        expect(joinConnection.connectionSettings.connection.height).toBeUndefined();
+                        
+                        wsClient1.close();
+                        wsClient2.close();
+                        done();
+                    }, 100);
+                }
+            };
+
+            wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
+            
+            server.on('open', (clientConnection) => {
+                if (!firstConnectionId) {
+                    firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
+                    checkCompletion();
+                    
+                    setTimeout(() => {
+                        const joinToken = generateJoinConnectionToken(firstConnectionId);
+                        const url = `ws://localhost:${wsPort}/?token=${joinToken}&read-only=true&width=1920&height=1080`;
+                        wsClient2 = new WebSocket(url);
+                    }, 50);
+                } else {
+                    checkCompletion();
+                }
+            });
+        }, 10000);
+
+        test('Multiple clients can join the same connection', (done) => {
+            let wsClient1, wsClient2, wsClient3;
+            let firstConnectionId;
+            let connectionsReady = 0;
+
+            const checkCompletion = () => {
+                connectionsReady++;
+                if (connectionsReady === 3) {
+                    setTimeout(() => {
+                        expect(server.activeConnections.size).toBe(3);
+                        
+                        const connections = Array.from(server.activeConnections.values());
+                        const joinConnections = connections.filter(conn => conn.connectionSettings.connection.join);
+                        expect(joinConnections.length).toBe(2);
+                        
+                        // Both join connections should reference the same original connection
+                        joinConnections.forEach(conn => {
+                            expect(conn.connectionSettings.connection.join).toBe(firstConnectionId);
+                        });
+                        
+                        wsClient1.close();
+                        wsClient2.close();
+                        wsClient3.close();
+                        done();
+                    }, 100);
+                }
+            };
+
+            wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
+            
+            server.on('open', (clientConnection) => {
+                if (!firstConnectionId) {
+                    firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
+                    checkCompletion();
+                    
+                    setTimeout(() => {
+                        const joinToken1 = generateJoinConnectionToken(firstConnectionId, true);
+                        const joinToken2 = generateJoinConnectionToken(firstConnectionId, false);
+                        wsClient2 = createWsClient(wsPort, joinToken1);
+                        wsClient3 = createWsClient(wsPort, joinToken2);
+                    }, 50);
+                } else {
+                    checkCompletion();
+                }
+            });
+        }, 10000);
+
+        test('Join connection handles invalid connection ID gracefully', (done) => {
+            const invalidConnectionId = 'invalid-connection-id-123';
+            const joinToken = generateJoinConnectionToken(invalidConnectionId);
+            const wsClient = createWsClient(wsPort, joinToken);
+
+            server.on('open', (clientConnection) => {
+                expect(clientConnection.connectionSelector).toBe(invalidConnectionId);
+                expect(clientConnection.connectionSettings.connection.join).toBe(invalidConnectionId);
+                
+                // The connection should still be created (validation happens at guacd level)
+                expect(server.activeConnections.size).toBe(1);
+                
+                wsClient.close();
+                done();
+            });
+
+            wsClient.on('error', (err) => {
+                // Connection might fail at guacd level, which is expected
+                done();
+            });
+        }, 10000);
     });
 });
