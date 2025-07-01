@@ -9,7 +9,8 @@ describe('GuacdClient Tests', () => {
     let guacdPort;
 
     beforeEach(async () => {
-        guacdPort = 4822 + Math.floor(Math.random() * 1000);
+        // Use a wider port range to reduce collisions
+        guacdPort = 10000 + Math.floor(Math.random() * 10000);
         mockGuacdServer = new MockGuacdServer({port: guacdPort});
         await mockGuacdServer.start();
 
@@ -117,15 +118,16 @@ describe('GuacdClient Tests', () => {
 
     test('Timezone instruction with VERSION_1_0_0 protocol', (done) => {
         // Create a mock server that advertises VERSION_1_0_0 (timezone should NOT be sent)
+        const testPort = 20000 + Math.floor(Math.random() * 10000);
         const oldProtocolServer = new MockGuacdServer({
-            port: guacdPort + 100,
+            port: testPort,
             protocolVersion: 'VERSION_1_0_0'
         });
         
         oldProtocolServer.start().then(() => {
             const settingsWithTimezone = { ...guacdClient.connectionSettings, 'timezone': 'America/New_York' };
             const clientWithTimezone = new GuacdClient(
-                {port: guacdPort + 100}, 
+                {port: testPort}, 
                 'rdp', 
                 settingsWithTimezone, 
                 new Logger(TESTS_LOGLEVEL)
@@ -143,15 +145,16 @@ describe('GuacdClient Tests', () => {
 
     test('Timezone instruction with VERSION_1_1_0 protocol', (done) => {
         // Create a mock server that advertises VERSION_1_1_0 (timezone SHOULD be sent)
+        const testPort = 20000 + Math.floor(Math.random() * 10000);
         const newProtocolServer = new MockGuacdServer({
-            port: guacdPort + 101,
+            port: testPort,
             protocolVersion: 'VERSION_1_1_0'
         });
         
         newProtocolServer.start().then(() => {
             const settingsWithTimezone = { ...guacdClient.connectionSettings, 'timezone': 'America/New_York' };
             const clientWithTimezone = new GuacdClient(
-                {port: guacdPort + 101}, 
+                {port: testPort}, 
                 'rdp', 
                 settingsWithTimezone, 
                 new Logger(TESTS_LOGLEVEL)
@@ -170,15 +173,16 @@ describe('GuacdClient Tests', () => {
 
     test('Timezone instruction with VERSION_1_5_0 protocol', (done) => {
         // Create a mock server that advertises VERSION_1_5_0 (timezone SHOULD be sent)
+        const testPort = 20000 + Math.floor(Math.random() * 10000);
         const latestProtocolServer = new MockGuacdServer({
-            port: guacdPort + 102,
+            port: testPort,
             protocolVersion: 'VERSION_1_5_0'
         });
         
         latestProtocolServer.start().then(() => {
             const settingsWithTimezone = { ...guacdClient.connectionSettings, 'timezone': 'America/New_York' };
             const clientWithTimezone = new GuacdClient(
-                {port: guacdPort + 102}, 
+                {port: testPort}, 
                 'rdp', 
                 settingsWithTimezone, 
                 new Logger(TESTS_LOGLEVEL)

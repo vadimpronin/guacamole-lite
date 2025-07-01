@@ -424,7 +424,7 @@ describe('WebSocket Server Tests', () => {
                 done();
             });
 
-            wsClient.on('error', (err) => {
+            wsClient.on('error', () => {
                 // Connection might fail at guacd level, which is expected
                 done();
             });
