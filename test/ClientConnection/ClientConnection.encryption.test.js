@@ -113,7 +113,7 @@ describe('ClientConnection Encryption and Security Tests', () => {
 
             // Allow next tick for close event to be emitted
             setImmediate(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED); // STATE_CLOSED
                 done();
             });
         });
@@ -147,7 +147,7 @@ describe('ClientConnection Encryption and Security Tests', () => {
             );
 
             setTimeout(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED); // STATE_CLOSED
                 done();
             }, 10);
         });
@@ -164,7 +164,7 @@ describe('ClientConnection Encryption and Security Tests', () => {
             );
 
             setTimeout(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED); // STATE_CLOSED
                 done();
             }, 10);
         });
@@ -179,7 +179,7 @@ describe('ClientConnection Encryption and Security Tests', () => {
             );
 
             setTimeout(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED); // STATE_CLOSED
                 done();
             }, 10);
         });
@@ -194,7 +194,7 @@ describe('ClientConnection Encryption and Security Tests', () => {
             );
 
             setTimeout(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED); // STATE_CLOSED
                 done();
             }, 10);
         });

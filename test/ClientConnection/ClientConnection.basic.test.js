@@ -29,10 +29,10 @@ describe('ClientConnection Basic Functionality Tests', () => {
     });
 
     test('Constructor initializes correctly', () => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         expect(clientConnection.connectionId).toBe(1);
-        expect(clientConnection.state).toBe(1); // STATE_OPEN
+        expect(clientConnection.state).toBe(clientConnection.STATE_OPEN);
         expect(clientConnection.webSocket).toBe(mockWebSocket);
         expect(clientConnection.connectionSelector).toBe('rdp');
         expect(clientConnection.lastActivity).toBeDefined();
@@ -72,7 +72,7 @@ describe('ClientConnection Basic Functionality Tests', () => {
             dpi: '120'
         };
 
-        clientConnection = createClientConnection({ mockWebSocket, query });
+        clientConnection = createClientConnection({mockWebSocket, query});
 
         expect(clientConnection.connectionSettings.connection.width).toBe('1920');
         expect(clientConnection.connectionSettings.connection.height).toBe('1080');
@@ -85,15 +85,15 @@ describe('ClientConnection Basic Functionality Tests', () => {
             GUAC_VIDEO: 'video/webm'
         };
 
-        clientConnection = createClientConnection({ mockWebSocket, query });
+        clientConnection = createClientConnection({mockWebSocket, query});
 
         expect(clientConnection.connectionSettings.connection.audio).toBe('audio/L8');
         expect(clientConnection.connectionSettings.connection.video).toBe('video/webm');
     });
 
     test('Send does not send when connection is closed', () => {
-        clientConnection = createClientConnection({ mockWebSocket });
-        clientConnection.state = 2; // STATE_CLOSED
+        clientConnection = createClientConnection({mockWebSocket});
+        clientConnection.state = clientConnection.STATE_CLOSED;
 
         clientConnection.send('test message');
 
@@ -101,7 +101,7 @@ describe('ClientConnection Basic Functionality Tests', () => {
     });
 
     test('Multiple close calls are handled safely', (done) => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
         let closeCallCount = 0;
 
         clientConnection.on('close', () => {
@@ -115,7 +115,7 @@ describe('ClientConnection Basic Functionality Tests', () => {
 
             setTimeout(() => {
                 expect(closeCallCount).toBe(1);
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED);
                 done();
             }, 10);
         });

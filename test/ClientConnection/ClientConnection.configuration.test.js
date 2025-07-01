@@ -196,7 +196,7 @@ describe('ClientConnection Configuration and Settings Tests', () => {
             );
 
             setTimeout(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED);
                 done();
             }, 10);
         });
@@ -231,7 +231,7 @@ describe('ClientConnection Configuration and Settings Tests', () => {
                 validationCallbacks
             );
 
-            expect(clientConnection.state).toBe(1); // STATE_OPEN
+            expect(clientConnection.state).toBe(clientConnection.STATE_OPEN);
             expect(clientConnection.connectionSettings.expiration).toBeDefined();
         });
 
@@ -332,7 +332,7 @@ describe('ClientConnection Configuration and Settings Tests', () => {
 
             // Allow next tick for close event to be emitted
             setImmediate(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED);
                 done();
             });
         });
@@ -451,7 +451,7 @@ describe('ClientConnection Configuration and Settings Tests', () => {
 
         // Should have the unsupported connection type
         expect(clientConnection.connectionSelector).toBe('unsupported_protocol');
-        expect(clientConnection.state).toBe(1); // STATE_OPEN
+        expect(clientConnection.state).toBe(clientConnection.STATE_OPEN);
         // Connection settings should contain hostname from token
         expect(clientConnection.connectionSettings.connection.hostname).toBe('192.168.1.100');
     });

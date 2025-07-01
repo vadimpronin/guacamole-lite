@@ -46,7 +46,7 @@ describe('ClientConnection Error Handling and Edge Cases Tests', () => {
             );
 
             setTimeout(() => {
-                expect(clientConnection.state).toBe(2); // STATE_CLOSED
+                expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED);
                 done();
             }, 10);
         });
@@ -73,7 +73,7 @@ describe('ClientConnection Error Handling and Edge Cases Tests', () => {
 
             // Should have undefined connection type
             expect(clientConnection.connectionSelector).toBeUndefined();
-            expect(clientConnection.state).toBe(1); // STATE_OPEN
+            expect(clientConnection.state).toBe(clientConnection.STATE_OPEN);
         });
     });
 
@@ -187,7 +187,7 @@ describe('ClientConnection Error Handling and Edge Cases Tests', () => {
 
             // Connection should remain in open state but never proceed to ready
             setTimeout(() => {
-                expect(clientConnection.state).toBe(1); // STATE_OPEN
+                expect(clientConnection.state).toBe(clientConnection.STATE_OPEN);
                 // Should not have guacdClient yet
                 expect(clientConnection.guacdClient).toBeUndefined();
                 done();
@@ -213,7 +213,7 @@ describe('ClientConnection Error Handling and Edge Cases Tests', () => {
 
             // Connection should be modified by callback
             expect(clientConnection.connectionSettings.connection).toBeUndefined();
-            expect(clientConnection.state).toBe(1); // STATE_OPEN
+            expect(clientConnection.state).toBe(clientConnection.STATE_OPEN);
         });
     });
 });

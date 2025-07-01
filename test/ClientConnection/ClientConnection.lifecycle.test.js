@@ -7,6 +7,7 @@ const {
     generateNewConnectionToken,
     ClientConnection
 } = require('../helpers/ClientConnectionTestHelpers');
+const GuacamoleParser = require("../../lib/vendor/GuacamoleParser");
 
 describe('ClientConnection Lifecycle Tests', () => {
     let mockGuacdServer;
@@ -28,7 +29,7 @@ describe('ClientConnection Lifecycle Tests', () => {
     });
 
     test('Connect establishes guacd connection', (done) => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         clientConnection.on('ready', (connection) => {
             expect(connection).toBe(clientConnection);
@@ -41,31 +42,25 @@ describe('ClientConnection Lifecycle Tests', () => {
 
     test('Forwards connection ID to client with empty opcode upon ready', (done) => {
         const GuacamoleParser = require('../../lib/vendor/GuacamoleParser');
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
-        // Listen for messages sent to the WebSocket
-        mockWebSocket.on('messageSent', (message) => {
-            const parser = new GuacamoleParser();
-            let receivedOpcode = null;
-            let receivedParams = null;
-            
-            parser.oninstruction = (opcode, params) => {
-                receivedOpcode = opcode;
-                receivedParams = params;
-            };
-            
-            parser.receive(message);
-            
+        const parser = new GuacamoleParser();
+        parser.oninstruction = (opcode, params) => {
             // Check if this is an instruction with empty opcode
-            if (receivedOpcode === '') {
-                expect(receivedParams).toBeDefined();
-                expect(receivedParams.length).toBe(1);
-                
-                const connectionId = receivedParams[0];
+            if (opcode === '') {
+                expect(params).toBeDefined();
+                expect(params.length).toBe(1);
+
+                const connectionId = params[0];
                 // Verify the connection ID format: starts with $ followed by UUID
                 expect(connectionId).toMatch(/^\$[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
                 done();
             }
+        };
+
+        // Listen for messages sent to the WebSocket
+        mockWebSocket.on('messageSent', (message) => {
+            parser.receive(message);
         });
 
         clientConnection.connect({port: guacdPort, host: '127.0.0.1'});
@@ -74,7 +69,7 @@ describe('ClientConnection Lifecycle Tests', () => {
     test('WebSocket message forwarding to guacd', (done) => {
         const testMessage = '4.test,37.$260d01da-779b-4ee9-afc1-c16bae885cc7;';
 
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         clientConnection.on('ready', () => {
             mockWebSocket.emit('message', testMessage);
@@ -101,7 +96,7 @@ describe('ClientConnection Lifecycle Tests', () => {
     test('Guacd data forwarding to WebSocket', (done) => {
         const testData = '4.sync,8.34046906;';
 
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         // Listen for the specific message to be sent to WebSocket
         mockWebSocket.on('messageSent', (message) => {
@@ -123,11 +118,11 @@ describe('ClientConnection Lifecycle Tests', () => {
     });
 
     test('WebSocket close triggers connection close', (done) => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         clientConnection.on('close', (connection, error) => {
             expect(error).toBeUndefined();
-            expect(clientConnection.state).toBe(2); // STATE_CLOSED
+            expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED);
             done();
         });
 
@@ -139,11 +134,11 @@ describe('ClientConnection Lifecycle Tests', () => {
     });
 
     test('Manual close works correctly', (done) => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         clientConnection.on('close', (connection, error) => {
             expect(error).toBeUndefined();
-            expect(clientConnection.state).toBe(2); // STATE_CLOSED
+            expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED);
             done();
         });
 
@@ -156,11 +151,11 @@ describe('ClientConnection Lifecycle Tests', () => {
 
     test('Close with error is handled correctly', (done) => {
         const testError = new Error('Test error');
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         clientConnection.on('close', (connection, error) => {
             expect(error).toBe(testError);
-            expect(clientConnection.state).toBe(2); // STATE_CLOSED
+            expect(clientConnection.state).toBe(clientConnection.STATE_CLOSED);
             done();
         });
 
@@ -172,7 +167,7 @@ describe('ClientConnection Lifecycle Tests', () => {
     });
 
     test('Activity tracking updates on message', (done) => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         clientConnection.on('ready', () => {
             const initialActivity = clientConnection.lastActivity;
@@ -193,7 +188,7 @@ describe('ClientConnection Lifecycle Tests', () => {
     test('Inactivity timeout triggers close', (done) => {
         const shortTimeoutOptions = {
             ...clientOptions,
-            maxInactivityTime: 100 // Very short timeout for testing
+            maxInactivityTime: 50 // Very short timeout for testing
         };
 
         clientConnection = new ClientConnection(
@@ -211,15 +206,17 @@ describe('ClientConnection Lifecycle Tests', () => {
         });
 
         clientConnection.on('ready', () => {
-            // Set last activity to past time to trigger timeout
-            clientConnection.lastActivity = Date.now() - 200;
+            // Force immediate timeout by setting activity far in the past
+            clientConnection.lastActivity = Date.now() - 1000;
+            // Manually trigger the check instead of waiting for interval
+            clientConnection.checkActivity();
         });
 
         clientConnection.connect({port: guacdPort, host: '127.0.0.1'});
     });
 
     test('GuacdClient error forwarding', (done) => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         clientConnection.on('error', (connection, error) => {
             expect(connection).toBe(clientConnection);
@@ -236,7 +233,7 @@ describe('ClientConnection Lifecycle Tests', () => {
     });
 
     test('WebSocket send error handling', (done) => {
-        clientConnection = createClientConnection({ mockWebSocket });
+        clientConnection = createClientConnection({mockWebSocket});
 
         // Mock WebSocket send to trigger error
         mockWebSocket.send = (data, options, callback) => {
@@ -279,9 +276,9 @@ describe('ClientConnection Lifecycle Tests', () => {
 
                 // Wait longer than normal timeout would be
                 setTimeout(() => {
-                    expect(clientConnection.state).toBe(1); // STATE_OPEN
+                    expect(clientConnection.state).toBe(clientConnection.STATE_OPEN);
                     done();
-                }, 100);
+                }, 2000);
             });
 
             clientConnection.connect({port: guacdPort, host: '127.0.0.1'});
@@ -290,7 +287,7 @@ describe('ClientConnection Lifecycle Tests', () => {
         test('Custom inactivity timeout value', (done) => {
             const customTimeoutOptions = {
                 ...clientOptions,
-                maxInactivityTime: 50 // Very short for testing
+                maxInactivityTime: 30 // Very short for testing
             };
 
             clientConnection = new ClientConnection(
@@ -308,8 +305,10 @@ describe('ClientConnection Lifecycle Tests', () => {
             });
 
             clientConnection.on('ready', () => {
-                // Set last activity to trigger timeout
-                clientConnection.lastActivity = Date.now() - 100;
+                // Force immediate timeout by setting activity far in the past
+                clientConnection.lastActivity = Date.now() - 1000;
+                // Manually trigger the check instead of waiting for interval
+                clientConnection.checkActivity();
             });
 
             clientConnection.connect({port: guacdPort, host: '127.0.0.1'});
@@ -318,7 +317,7 @@ describe('ClientConnection Lifecycle Tests', () => {
 
     describe('Connection State Edge Cases', () => {
         test('Multiple connect calls on same connection', (done) => {
-            clientConnection = createClientConnection({ mockWebSocket });
+            clientConnection = createClientConnection({mockWebSocket});
             let readyCount = 0;
             let errorCount = 0;
 
@@ -351,7 +350,7 @@ describe('ClientConnection Lifecycle Tests', () => {
         });
 
         test('Connect with invalid guacd options', (done) => {
-            clientConnection = createClientConnection({ mockWebSocket });
+            clientConnection = createClientConnection({mockWebSocket});
 
             clientConnection.on('error', (connection, error) => {
                 expect(error).toBeDefined();
