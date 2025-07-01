@@ -10,8 +10,10 @@ describe('GuacdClient Tests', () => {
 
     // jest.useFakeTimers();
 
-    beforeEach(() => {
-        mockGuacdServer = new MockGuacdServer(guacdPort);
+    beforeEach(async () => {
+        mockGuacdServer = new MockGuacdServer({port: guacdPort});
+        await mockGuacdServer.start();
+
         guacdClient = new GuacdClient(
             {
                 port: guacdPort
@@ -39,9 +41,9 @@ describe('GuacdClient Tests', () => {
         );
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         guacdClient.close();
-        mockGuacdServer.stop();
+        await mockGuacdServer.stop();
     });
 
     test('Connection Establishment', (done) => {

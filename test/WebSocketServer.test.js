@@ -9,14 +9,15 @@ describe('WebSocket Server Tests', () => {
     let wsPort;
     let guacdPort;
 
-    beforeAll(() => {
+    beforeAll(async () => {
         wsPort = 8080;
         guacdPort = 4822;
-        mockGuacdServer = new MockGuacdServer(guacdPort);
+        mockGuacdServer = new MockGuacdServer({port: guacdPort});
+        await mockGuacdServer.start();
     });
 
-    afterAll((done) => {
-        mockGuacdServer.stop(done);
+    afterAll(async () => {
+        await mockGuacdServer.stop();
     });
 
     beforeEach(() => {
