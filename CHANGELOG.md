@@ -1,4 +1,4 @@
-# Version 1.1.0
+# [1.1.0]
 
 This release introduces a major new feature for joining existing connections, along with significant internal
 refactoring to improve the reliability and correctness of the Guacamole protocol implementation.
@@ -70,7 +70,7 @@ refactoring to improve the reliability and correctness of the Guacamole protocol
 
 ---
 
-# Version 1.0.2
+# [1.0.2]
 
 ### Bug Fixes
 
@@ -88,7 +88,7 @@ refactoring to improve the reliability and correctness of the Guacamole protocol
 
 ---
 
-# Version 1.0.1
+# [1.0.1]
 
 This major release represents a complete refactoring of guacamole-lite with comprehensive testing, improved
 architecture, and enhanced protocol compliance.
@@ -140,3 +140,7 @@ architecture, and enhanced protocol compliance.
 - **Updated Documentation**: `README.md` updated for new testing capabilities
 - **Improved Examples**: Code comments and examples aligned with architectural changes
 - **Package Metadata**: Added `scripts.test`, updated keywords and metadata in `package.json`
+
+[1.1.0]: https://github.com/vadimpronin/guacamole-lite/compare/v1.0.2...v1.1.0
+[1.0.2]: https://github.com/vadimpronin/guacamole-lite/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/vadimpronin/guacamole-lite/compare/v0.7.3...v1.0.1
