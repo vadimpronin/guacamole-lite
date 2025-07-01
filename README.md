@@ -222,7 +222,14 @@ const tokenObject = {
     connection: {
         join: "$b447679c-0541-4b3d-821b-74389e9dfb16",
         settings: {
-            "read-only": true
+            "read-only": true,
+            "width": 1920,
+            "height": 1080,
+            "dpi": 96,
+            "audio": ["audio/L16"],
+            "video": "video/webm",
+            "image": ["image/png", "image/jpeg"],
+            "timezone": "America/New_York"
         }
     }
 };

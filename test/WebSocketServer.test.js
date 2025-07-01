@@ -315,7 +315,7 @@ describe('WebSocket Server Tests', () => {
             });
         }, 10000);
 
-        test('Join connection ignores non-read-only query parameters', (done) => {
+        test('Join connection accepts display settings query parameters', (done) => {
             let wsClient1, wsClient2;
             let firstConnectionId;
             let connectionsReady = 0;
@@ -330,10 +330,11 @@ describe('WebSocket Server Tests', () => {
                         const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
                         expect(joinConnection).toBeDefined();
                         
-                        // Should have read-only but not width/height
+                        // Should have all display settings
                         expect(joinConnection.connectionSettings.connection['read-only']).toBe('true');
-                        expect(joinConnection.connectionSettings.connection.width).toBeUndefined();
-                        expect(joinConnection.connectionSettings.connection.height).toBeUndefined();
+                        expect(joinConnection.connectionSettings.connection.width).toBe('1920');
+                        expect(joinConnection.connectionSettings.connection.height).toBe('1080');
+                        expect(joinConnection.connectionSettings.connection.dpi).toBe('120');
                         
                         wsClient1.close();
                         wsClient2.close();
@@ -351,7 +352,7 @@ describe('WebSocket Server Tests', () => {
                     
                     setTimeout(() => {
                         const joinToken = generateJoinConnectionToken(firstConnectionId);
-                        const url = `ws://localhost:${wsPort}/?token=${joinToken}&read-only=true&width=1920&height=1080`;
+                        const url = `ws://localhost:${wsPort}/?token=${joinToken}&read-only=true&width=1920&height=1080&dpi=120`;
                         wsClient2 = new WebSocket(url);
                     }, 50);
                 } else {

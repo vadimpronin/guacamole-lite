@@ -16,6 +16,20 @@ const clientOptions = {
         // },
         // errorLog: () => {
         // }
+    },
+    allowedUnencryptedConnectionSettings: {
+        join: [
+            'width',
+            'height',
+            'dpi',
+            'audio',
+            'video',
+            'image',
+            'timezone',
+            'read-only',
+            'GUAC_AUDIO',
+            'GUAC_VIDEO',
+        ]
     }
 };
 
@@ -56,11 +70,41 @@ const generateNewConnectionToken = () => {
     return crypt.encrypt(tokenObject);
 };
 
-const generateJoinConnectionToken = (connectionId, readOnly = false) => {
+const generateJoinConnectionToken = (connectionId, settings = {}) => {
+    // Support legacy boolean readOnly parameter for backward compatibility
+    if (typeof settings === 'boolean') {
+        settings = settings ? { 'read-only': settings } : {};
+    }
+
     const tokenObject = {
         connection: {
             join: connectionId,
-            settings: readOnly ? { 'read-only': readOnly } : {}
+            settings: settings
+        }
+    };
+
+    const crypt = new Crypt(clientOptions.crypt.cypher, clientOptions.crypt.key);
+    return crypt.encrypt(tokenObject);
+};
+
+const generateJoinConnectionTokenWithDisplaySettings = (connectionId, displaySettings = {}) => {
+    const defaultSettings = {
+        'read-only': false,
+        'width': 1920,
+        'height': 1080,
+        'dpi': 96,
+        'audio': ['audio/L16'],
+        'video': null,
+        'image': ['image/png', 'image/jpeg'],
+        'timezone': null
+    };
+
+    const settings = { ...defaultSettings, ...displaySettings };
+
+    const tokenObject = {
+        connection: {
+            join: connectionId,
+            settings: settings
         }
     };
 
@@ -73,5 +117,6 @@ module.exports = {
     createWsClient,
     generateNewConnectionToken,
     generateJoinConnectionToken,
+    generateJoinConnectionTokenWithDisplaySettings,
     TESTS_LOGLEVEL
 };

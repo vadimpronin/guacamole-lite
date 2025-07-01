@@ -27,9 +27,30 @@ const clientOptions = {
             'video': null,
             'image': ['image/png', 'image/jpeg'],
             'timezone': null,
+        },
+        join: {
+            'width': 1024,
+            'height': 768,
+            'dpi': 96,
+            'audio': ['audio/L16'],
+            'video': null,
+            'image': ['image/png', 'image/jpeg'],
+            'timezone': null,
         }
     },
     allowedUnencryptedConnectionSettings: {
+        join: [
+            'read-only',
+            'width',
+            'height',
+            'dpi',
+            'audio',
+            'video',
+            'image',
+            'timezone',
+            'GUAC_AUDIO',
+            'GUAC_VIDEO',
+        ],
         rdp: ['width', 'height', 'dpi', 'audio', 'video', 'image', 'timezone', 'GUAC_AUDIO', 'GUAC_VIDEO']
     }
 };

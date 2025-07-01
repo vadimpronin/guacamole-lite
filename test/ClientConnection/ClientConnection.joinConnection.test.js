@@ -164,7 +164,7 @@ describe('ClientConnection Join Connection Functionality Tests', () => {
         expect(clientConnection.connectionSettings.connection['read-only']).toBe('true');
     });
 
-    test('Join connection ignores extraneous parameters', () => {
+    test('Join connection includes all settings from token including connection-specific parameters', () => {
         const tokenObject = {
             connection: {
                 join: 'test-connection-id-ghi',
@@ -173,7 +173,12 @@ describe('ClientConnection Join Connection Functionality Tests', () => {
                     'username': 'testuser',
                     'password': 'testpass',
                     'read-only': true,
-                    'port': '3389'
+                    'port': '3389',
+                    'width': 1920,
+                    'height': 1080,
+                    'dpi': 120,
+                    'audio': ['audio/L8'],
+                    'video': 'video/webm'
                 }
             }
         };
@@ -189,12 +194,17 @@ describe('ClientConnection Join Connection Functionality Tests', () => {
 
         expect(clientConnection.connectionSelector).toBe('test-connection-id-ghi');
         expect(clientConnection.connectionSettings.connection['read-only']).toBe(true);
+        expect(clientConnection.connectionSettings.connection.width).toBe(1920);
+        expect(clientConnection.connectionSettings.connection.height).toBe(1080);
+        expect(clientConnection.connectionSettings.connection.dpi).toBe(120);
+        expect(clientConnection.connectionSettings.connection.audio).toEqual(['audio/L8']);
+        expect(clientConnection.connectionSettings.connection.video).toBe('video/webm');
         
-        // These parameters should be ignored for join connections
-        expect(clientConnection.connectionSettings.connection.hostname).toBeUndefined();
-        expect(clientConnection.connectionSettings.connection.username).toBeUndefined();
-        expect(clientConnection.connectionSettings.connection.password).toBeUndefined();
-        expect(clientConnection.connectionSettings.connection.port).toBeUndefined();
+        // Connection-specific parameters are now included (they may be needed by guacd)
+        expect(clientConnection.connectionSettings.connection.hostname).toBe('192.168.1.100');
+        expect(clientConnection.connectionSettings.connection.username).toBe('testuser');
+        expect(clientConnection.connectionSettings.connection.password).toBe('testpass');
+        expect(clientConnection.connectionSettings.connection.port).toBe('3389');
     });
 
     test('Join connection with empty settings object', () => {
@@ -261,44 +271,43 @@ describe('ClientConnection Join Connection Functionality Tests', () => {
         expect(clientConnection.connectionSettings.connection['read-only']).toBe(false);
     });
 
-    test('Join connection mergeConnectionOptions only includes read-only', () => {
-        const customClientOptions = {
-            ...clientOptions,
-            allowedUnencryptedConnectionSettings: {
-                ...clientOptions.allowedUnencryptedConnectionSettings,
-                join: ['read-only']
-            }
-        };
-
+    test('Join connection mergeConnectionOptions includes display settings and read-only', () => {
         const tokenObject = {
             connection: {
                 join: 'test-connection-id-stu',
                 settings: {
-                    'read-only': true
+                    'read-only': true,
+                    'width': 1024,
+                    'height': 768
                 }
             }
         };
         const encryptedToken = crypt.encrypt(tokenObject);
 
         clientConnection = new ClientConnection(
-            customClientOptions,
+            clientOptions,
             1,
             mockWebSocket,
             {
                 token: encryptedToken,
                 'read-only': 'false', // This should override the token
-                'width': '1920', // This should be ignored
-                'height': '1080' // This should be ignored
+                'width': '1920', // This should override the token
+                'height': '1080', // This should override the token
+                'dpi': '120' // This should be added
             },
             callbacks
         );
 
         expect(clientConnection.connectionSelector).toBe('test-connection-id-stu');
         expect(clientConnection.connectionSettings.connection['read-only']).toBe('false');
+        expect(clientConnection.connectionSettings.connection.width).toBe('1920');
+        expect(clientConnection.connectionSettings.connection.height).toBe('1080');
+        expect(clientConnection.connectionSettings.connection.dpi).toBe('120');
         
-        // These query parameters should be ignored for join connections
-        expect(clientConnection.connectionSettings.connection.width).toBeUndefined();
-        expect(clientConnection.connectionSettings.connection.height).toBeUndefined();
+        // Should have defaults from join connectionDefaultSettings
+        expect(clientConnection.connectionSettings.connection.audio).toEqual(['audio/L16']);
+        expect(clientConnection.connectionSettings.connection.video).toBe(null);
+        expect(clientConnection.connectionSettings.connection.image).toEqual(['image/png', 'image/jpeg']);
     });
 
     test('Join connection UUID format validation', () => {
@@ -349,5 +358,195 @@ describe('ClientConnection Join Connection Functionality Tests', () => {
         expect(clientConnection.connectionSelector).toBe('test-connection-id-vwx');
         expect(clientConnection.connectionSettings.connection.type).toBeUndefined();
         expect(clientConnection.connectionSettings.connection.join).toBe('test-connection-id-vwx');
+    });
+
+    describe('Join Connection Display Settings Tests', () => {
+        test('Join connection with all display settings from token', () => {
+            const tokenObject = {
+                connection: {
+                    join: 'test-connection-display-1',
+                    settings: {
+                        'width': 1920,
+                        'height': 1080,
+                        'dpi': 120,
+                        'audio': ['audio/L8', 'audio/L16'],
+                        'video': 'video/webm',
+                        'image': ['image/webp'],
+                        'timezone': 'America/New_York',
+                        'read-only': false
+                    }
+                }
+            };
+            const encryptedToken = crypt.encrypt(tokenObject);
+
+            clientConnection = new ClientConnection(
+                clientOptions,
+                1,
+                mockWebSocket,
+                {token: encryptedToken},
+                callbacks
+            );
+
+            expect(clientConnection.connectionSelector).toBe('test-connection-display-1');
+            expect(clientConnection.connectionSettings.connection.width).toBe(1920);
+            expect(clientConnection.connectionSettings.connection.height).toBe(1080);
+            expect(clientConnection.connectionSettings.connection.dpi).toBe(120);
+            expect(clientConnection.connectionSettings.connection.audio).toEqual(['audio/L8', 'audio/L16']);
+            expect(clientConnection.connectionSettings.connection.video).toBe('video/webm');
+            expect(clientConnection.connectionSettings.connection.image).toEqual(['image/webp']);
+            expect(clientConnection.connectionSettings.connection.timezone).toBe('America/New_York');
+            expect(clientConnection.connectionSettings.connection['read-only']).toBe(false);
+        });
+
+        test('Join connection with display settings from query parameters', () => {
+            const tokenObject = {
+                connection: {
+                    join: 'test-connection-display-2',
+                    settings: {}
+                }
+            };
+            const encryptedToken = crypt.encrypt(tokenObject);
+
+            clientConnection = new ClientConnection(
+                clientOptions,
+                1,
+                mockWebSocket,
+                {
+                    token: encryptedToken,
+                    'width': '2560',
+                    'height': '1440',
+                    'dpi': '144',
+                    'GUAC_AUDIO': 'audio/L8',
+                    'GUAC_VIDEO': 'video/h264'
+                },
+                callbacks
+            );
+
+            expect(clientConnection.connectionSelector).toBe('test-connection-display-2');
+            expect(clientConnection.connectionSettings.connection.width).toBe('2560');
+            expect(clientConnection.connectionSettings.connection.height).toBe('1440');
+            expect(clientConnection.connectionSettings.connection.dpi).toBe('144');
+            expect(clientConnection.connectionSettings.connection.audio).toBe('audio/L8');
+            expect(clientConnection.connectionSettings.connection.video).toBe('video/h264');
+        });
+
+        test('Join connection query parameters override token settings', () => {
+            const tokenObject = {
+                connection: {
+                    join: 'test-connection-display-3',
+                    settings: {
+                        'width': 1024,
+                        'height': 768,
+                        'dpi': 96,
+                        'audio': ['audio/L16'],
+                        'video': null
+                    }
+                }
+            };
+            const encryptedToken = crypt.encrypt(tokenObject);
+
+            clientConnection = new ClientConnection(
+                clientOptions,
+                1,
+                mockWebSocket,
+                {
+                    token: encryptedToken,
+                    'width': '1920',
+                    'height': '1080',
+                    'video': 'video/webm'
+                },
+                callbacks
+            );
+
+            expect(clientConnection.connectionSelector).toBe('test-connection-display-3');
+            expect(clientConnection.connectionSettings.connection.width).toBe('1920'); // overridden
+            expect(clientConnection.connectionSettings.connection.height).toBe('1080'); // overridden
+            expect(clientConnection.connectionSettings.connection.dpi).toBe(96); // from token
+            expect(clientConnection.connectionSettings.connection.audio).toEqual(['audio/L16']); // from token
+            expect(clientConnection.connectionSettings.connection.video).toBe('video/webm'); // overridden
+        });
+
+        test('Join connection uses defaults when no settings provided', () => {
+            const tokenObject = {
+                connection: {
+                    join: 'test-connection-display-4',
+                    settings: {}
+                }
+            };
+            const encryptedToken = crypt.encrypt(tokenObject);
+
+            clientConnection = new ClientConnection(
+                clientOptions,
+                1,
+                mockWebSocket,
+                {token: encryptedToken},
+                callbacks
+            );
+
+            expect(clientConnection.connectionSelector).toBe('test-connection-display-4');
+            // Should use defaults from clientOptions.connectionDefaultSettings.join
+            expect(clientConnection.connectionSettings.connection.width).toBe(1024);
+            expect(clientConnection.connectionSettings.connection.height).toBe(768);
+            expect(clientConnection.connectionSettings.connection.dpi).toBe(96);
+            expect(clientConnection.connectionSettings.connection.audio).toEqual(['audio/L16']);
+            expect(clientConnection.connectionSettings.connection.video).toBe(null);
+            expect(clientConnection.connectionSettings.connection.image).toEqual(['image/png', 'image/jpeg']);
+            expect(clientConnection.connectionSettings.connection.timezone).toBe(null);
+        });
+
+        test('Join connection with mixed audio formats', () => {
+            const tokenObject = {
+                connection: {
+                    join: 'test-connection-audio-1',
+                    settings: {
+                        'audio': ['audio/L16', 'audio/L8', 'audio/ogg']
+                    }
+                }
+            };
+            const encryptedToken = crypt.encrypt(tokenObject);
+
+            clientConnection = new ClientConnection(
+                clientOptions,
+                1,
+                mockWebSocket,
+                {token: encryptedToken},
+                callbacks
+            );
+
+            expect(clientConnection.connectionSelector).toBe('test-connection-audio-1');
+            expect(clientConnection.connectionSettings.connection.audio).toEqual(['audio/L16', 'audio/L8', 'audio/ogg']);
+        });
+
+        test('Join connection ignores non-allowed parameters in query', () => {
+            const tokenObject = {
+                connection: {
+                    join: 'test-connection-filter-1',
+                    settings: {}
+                }
+            };
+            const encryptedToken = crypt.encrypt(tokenObject);
+
+            clientConnection = new ClientConnection(
+                clientOptions,
+                1,
+                mockWebSocket,
+                {
+                    token: encryptedToken,
+                    'width': '1920', // allowed
+                    'height': '1080', // allowed
+                    'hostname': '192.168.1.100', // not allowed for join
+                    'username': 'testuser', // not allowed for join
+                    'password': 'secret' // not allowed for join
+                },
+                callbacks
+            );
+
+            expect(clientConnection.connectionSelector).toBe('test-connection-filter-1');
+            expect(clientConnection.connectionSettings.connection.width).toBe('1920');
+            expect(clientConnection.connectionSettings.connection.height).toBe('1080');
+            expect(clientConnection.connectionSettings.connection.hostname).toBeUndefined();
+            expect(clientConnection.connectionSettings.connection.username).toBeUndefined();
+            expect(clientConnection.connectionSettings.connection.password).toBeUndefined();
+        });
     });
 });

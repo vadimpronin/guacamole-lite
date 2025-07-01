@@ -336,7 +336,7 @@ Even though `width`, `height`, and `dpi` are allowed by default, they must be ex
 you wish to allow them to be overridden in the query string, otherwise they will be ignored.
 
 In addition to protocol-specific keys like `rdp` or `vnc`, you can define a special `join` key. This key's value should
-be an array of parameter names (like `['read-only']`) that are allowed to be overridden in the query string when a
+be an array of parameter names that are allowed to be overridden in the query string when a
 client is joining an existing session.
 
 #### Sending Multiple Values in Query
@@ -438,14 +438,15 @@ the [advanced_configuration.js example](../examples/advanced_configuration.js) i
 ### Joining Existing Connections
 
 `guacamole-lite` supports the Guacamole protocol's feature for joining existing, active connections. This is useful for
-scenarios like session sharing, screen sharing, or administrative observation. Instead of specifying a protocol `type`,
+scenarios like session sharing, screen sharing, administrative observation, or collaborative work. Instead of specifying a protocol `type`,
 the client provides the unique ID of the connection to be joined.
 
 #### Token Structure for Joining a Connection
 
 To join an existing connection, the `connection` object within the encrypted token must contain a `join` property. The
-`type` property must be omitted.
+`type` property must be omitted as they are mutually exclusive.
 
+**Basic Join Connection:**
 ```json
 {
   "connection": {
@@ -456,6 +457,27 @@ To join an existing connection, the `connection` object within the encrypted tok
   }
 }
 ```
+
+**Join Connection with Display Settings:**
+```json
+{
+  "connection": {
+    "join": "$b447679c-0541-4b3d-821b-74389e9dfb16",
+    "settings": {
+      "read-only": false,
+      "width": 1920,
+      "height": 1080,
+      "dpi": 96,
+      "audio": ["audio/L16", "audio/L8"],
+      "video": "video/webm",
+      "image": ["image/png", "image/jpeg"],
+      "timezone": "America/New_York"
+    }
+  }
+}
+```
+
+#### Join Connection Properties
 
 - **`join`**: The unique ID of the active connection to join. This ID is provided to the initial client by `guacd` upon
   a successful connection. On the server side, it can be captured via the `open` event on the `guacamole-lite` server
@@ -475,27 +497,87 @@ To join an existing connection, the `connection` object within the encrypted tok
   // ... rest of the client setup
   ```
 
-- **`settings`**: An object containing parameters for the joining session. For join operations, this is typically
-  limited to the `read-only` parameter.
-    - **`read-only`**: If set to `true`, the joining client will be in view-only mode and cannot interact with the
-      remote desktop.
+- **`settings`**: An object containing parameters for the joining session. Join connections support comprehensive display settings:
+    - **`read-only`**: If set to `true`, the joining client will be in view-only mode and cannot interact with the remote desktop.
+    - **`width`** and **`height`**: Screen resolution for the joining client (e.g., 1920, 1080).
+    - **`dpi`**: Screen density in dots per inch (e.g., 96, 120, 144).
+    - **`audio`**: Supported audio codecs (e.g., `["audio/L16"]` or `["audio/L16", "audio/L8"]`).
+    - **`video`**: Video codec support (e.g., `"video/webm"` or `null` to disable).
+    - **`image`**: Supported image formats (e.g., `["image/png", "image/jpeg"]`).
+    - **`timezone`**: Client timezone (e.g., `"America/New_York"` or `null`).
 
-#### Overriding `read-only` via Query Parameter
+#### Configuration for Join Connections
 
-The `read-only` setting can also be controlled via a query parameter, provided it is whitelisted in
-the `allowedUnencryptedConnectionSettings`.
+Join connections have their own default settings and allowed unencrypted parameters. By default, `guacamole-lite` includes comprehensive display settings support:
 
 ```javascript
 const clientOptions = {
-    // ...
+    // Default settings for join connections
+    connectionDefaultSettings: {
+        join: {
+            'width': 1024,
+            'height': 768,
+            'dpi': 96,
+            'audio': ['audio/L16'],
+            'video': null,
+            'image': ['image/png', 'image/jpeg'],
+            'timezone': null,
+        },
+        // ... other connection types
+    },
+    
+    // Allowed query parameter overrides for join connections
     allowedUnencryptedConnectionSettings: {
-        join: ['read-only'] // Allow 'read-only' to be passed in the query for join operations
+        join: [
+            'read-only',
+            'width',
+            'height', 
+            'dpi',
+            'audio',
+            'video',
+            'image',
+            'timezone',
+            'GUAC_AUDIO',    // Backward compatibility
+            'GUAC_VIDEO'     // Backward compatibility
+        ],
+        // ... other connection types
     }
 };
 ```
 
-With this configuration, a client can join in read-only mode by appending `&read-only=true` to the WebSocket URL,
-overriding any value set in the token.
+#### Multiple Clients Joining
+
+Multiple clients can join the same connection simultaneously, each with their own display settings:
+
+```javascript
+// Client 1: High resolution, full interaction
+const client1Token = {
+    connection: {
+        join: "$b447679c-0541-4b3d-821b-74389e9dfb16",
+        settings: {
+            "read-only": false,
+            "width": 2560,
+            "height": 1440,
+            "dpi": 144
+        }
+    }
+};
+
+// Client 2: Lower resolution, read-only
+const client2Token = {
+    connection: {
+        join: "$b447679c-0541-4b3d-821b-74389e9dfb16",
+        settings: {
+            "read-only": true,
+            "width": 1280,
+            "height": 720,
+            "dpi": 96
+        }
+    }
+};
+```
+
+This enhanced join connection functionality ensures compatibility with guacd while providing the flexibility needed for various collaboration and sharing scenarios.
 
 ---
 
