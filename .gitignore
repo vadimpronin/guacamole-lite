@@ -40,3 +40,6 @@ jspm_packages
 
 package-lock.json
 mp.sh
+
+docs/guacamole-manual
+/guacamole-common-js

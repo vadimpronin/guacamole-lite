@@ -87,6 +87,16 @@
  *         connections[0].send('disconnect'); // Tell this client to disconnect
  *     });
  *     ```
+ *
+ * 5.  **Testing against a specific protocol version**:
+ *
+ *     Instantiate the server with the `protocolVersion` option to test how
+ *     your client behaves with an older guacd version.
+ *
+ *     ```javascript
+ *     // This server will tell clients it's running an older protocol version
+ *     server = new MockGuacdServer({ protocolVersion: 'VERSION_1_1_0' });
+ *     ```
  */
 
 const net = require('net');
@@ -108,9 +118,16 @@ const PROTOCOL_ARGS = {
 
 class MockGuacdServer {
 
+    /**
+     * @param {object} [options] - Configuration options for the server.
+     * @param {number} [options.port=4822] - The port to listen on.
+     * @param {boolean} [options.verbose=false] - Whether to log all protocol messages to the console.
+     * @param {string} [options.protocolVersion='VERSION_1_5_0'] - The Guacamole protocol version to advertise.
+     */
     constructor(options = {}) {
         this.port = options.port || 4822;
         this.verbose = options.verbose || false;
+        this.protocolVersion = options.protocolVersion || 'VERSION_1_5_0';
         this.sessions = new Map();
         this.allClients = new Set();
         this.server = net.createServer(this._handleConnection.bind(this));
@@ -132,7 +149,6 @@ class MockGuacdServer {
             });
             this.allClients.forEach(client => client.destroy());
             this.sessions.clear();
-            this.allClients.clear();
             this.server.close(() => {
                 if (this.verbose) console.log('Mock guacd stopped.');
                 resolve();
@@ -140,7 +156,6 @@ class MockGuacdServer {
         });
     }
 
-    // noinspection JSUnusedGlobalSymbols
     getClientConnections(sessionId) {
         const session = this.sessions.get(sessionId);
         return session ? Array.from(session.clientConnections) : [];
@@ -152,7 +167,7 @@ class MockGuacdServer {
         this.allClients.add(clientConnection);
 
         let session = null;
-        const connectionState = { state: 'WAITING_FOR_SELECT' };
+        const connectionState = {state: 'WAITING_FOR_SELECT'};
         const parser = new GuacamoleParser();
 
         socket.on('data', data => parser.receive(data.toString('utf8')));
@@ -172,7 +187,7 @@ class MockGuacdServer {
 
         parser.oninstruction = (opcode, params) => {
             if (this.verbose) console.log(`Mock guacd: RECV <<< ${opcode}(${params.join(', ')})`);
-            clientConnection.receivedInstructions.push({ opcode, params: [...params] });
+            clientConnection.receivedInstructions.push({opcode, params: [...params]});
 
             if (connectionState.state !== 'CONNECTED') {
                 this._handleHandshake(clientConnection, connectionState, opcode, params, (newSession) => {
@@ -189,7 +204,11 @@ class MockGuacdServer {
                 case 'disconnect':
                     socket.end();
                     break;
-                case 'blob': case 'end': case 'ack': case 'file': case 'pipe':
+                case 'blob':
+                case 'end':
+                case 'ack':
+                case 'file':
+                case 'pipe':
                     clientConnection.send('ack', params[0], 'OK', 'SUCCESS');
                     break;
                 case 'get':
@@ -232,7 +251,7 @@ class MockGuacdServer {
                 };
                 this.sessions.set(connectionId, session);
                 const requiredArgs = PROTOCOL_ARGS[protocol] || [];
-                clientConnection.send('args', ...requiredArgs);
+                clientConnection.send('args', this.protocolVersion, ...requiredArgs);
                 connectionState.state = 'WAITING_FOR_CONNECT';
             }
         } else if (connectionState.state === 'WAITING_FOR_CONNECT') {
@@ -300,7 +319,7 @@ class MockGuacdServer {
     /** @private */
     _sendInstructionToSocket(socket, opcode, ...args) {
         if (!socket || socket.destroyed) return;
-        const instruction = Guacamole.Parser.toInstruction([opcode, ...args]);
+        const instruction = GuacamoleParser.toInstruction([opcode, ...args]);
         if (this.verbose) {
             console.log(`Mock guacd: SEND >>> ${opcode}(${args.join(', ')})`);
         }
@@ -309,7 +328,7 @@ class MockGuacdServer {
 }
 
 if (require.main === module) {
-    const server = new MockGuacdServer({ verbose: true });
+    const server = new MockGuacdServer({verbose: true});
     server.start().then(() => {
         console.log('Mock guacd server is running. Press Ctrl+C to stop.');
         process.on('SIGINT', () => {
@@ -343,7 +362,7 @@ class ClientConnection {
     send(opcode, ...params) {
         if (!this.socket || this.socket.destroyed) return;
 
-        const instruction = Guacamole.Parser.toInstruction([opcode, ...params]);
+        const instruction = GuacamoleParser.toInstruction([opcode, ...params]);
 
         if (this.server.verbose) {
             console.log(`Mock guacd: SEND (to single client) >>> ${opcode}(${params.join(', ')})`);

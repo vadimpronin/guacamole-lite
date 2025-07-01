@@ -11,6 +11,7 @@ class MockWebSocket extends EventEmitter {
 
     send(data, options, callback) {
         this.messages.push(data);
+        this.emit('messageSent', data);
         if (callback) {
             setTimeout(callback, 0);
         }

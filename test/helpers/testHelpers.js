@@ -35,7 +35,7 @@ const createWsClient = (port, token) => {
     return new WebSocket(`ws://localhost:${port}/?token=${token}`);
 };
 
-const generateValidToken = () => {
+const generateNewConnectionToken = () => {
     const tokenObject = {
         connection: {
             type: 'rdp',
@@ -59,6 +59,6 @@ const generateValidToken = () => {
 module.exports = {
     startServer,
     createWsClient,
-    generateValidToken,
+    generateNewConnectionToken,
     TESTS_LOGLEVEL
 };
