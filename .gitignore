@@ -43,3 +43,5 @@ mp.sh
 
 docs/guacamole-manual
 /guacamole-common-js
+
+.DS_Store

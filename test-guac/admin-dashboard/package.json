@@ -1,0 +1,13 @@
+{
+  "name": "guacamole-lite-admin-dashboard",
+  "version": "1.0.0",
+  "description": "Admin dashboard for enhanced GuacamoleLite with session join tracking",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.2"
+  }
+}

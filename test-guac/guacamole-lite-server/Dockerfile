@@ -1,17 +1,19 @@
-FROM node:22-alpine
+FROM node:18-alpine
 
-WORKDIR /opt/guacamole-lite-server
+WORKDIR /app
 
+# Copy the entire project (including the enhanced fork)
+COPY package.json .
+COPY lib ./lib
+COPY index.js .
+
+# Copy the enhanced server startup script
 COPY test-guac/guacamole-lite-server/start.js .
 
-RUN mkdir guacamole-lite
+# Install dependencies
+RUN npm install
 
-COPY . guacamole-lite
+# Expose WebSocket port and admin API port
+EXPOSE 8080 3001
 
-WORKDIR /opt/guacamole-lite-server/guacamole-lite
-RUN npm install --omit=dev
-
-WORKDIR /opt/guacamole-lite-server
-
-EXPOSE 8080
-CMD ["node","start.js"]
+CMD ["node", "start.js"]

@@ -14,6 +14,8 @@ const joinConnectionDetailsDiv = document.getElementById('join-connection-detail
 const connectionIdInput = document.getElementById('connection-id');
 const readOnlyCheckbox = document.getElementById('read-only');
 const displayUuid = document.getElementById('display-uuid');
+const displayGuacd = document.getElementById('display-guacd');
+const guacdSelection = document.getElementById('guacd-selection');
 
 let currentClient = null; // Store the current Guacamole client
 let currentKeyboard = null; // Store the keyboard handler
@@ -33,6 +35,7 @@ function updateFormVisibility() {
         // Nothing selected – hide everything except connection-type row
         document.getElementById('connect-target').closest('.form-row').style.display = 'none';
         document.getElementById('protocol').closest('.form-row').style.display = 'none';
+        guacdSelection.closest('.form-row').style.display = 'none';
         remoteHostDetailsDiv.classList.remove('visible');
         joinConnectionDetailsDiv.classList.remove('visible');
         joinConnectionDetailsDiv.hidden = true;
@@ -43,6 +46,7 @@ function updateFormVisibility() {
         // Hide everything related to new connections
         document.getElementById('connect-target').closest('.form-row').style.display = 'none';
         document.getElementById('protocol').closest('.form-row').style.display = 'none';
+        guacdSelection.closest('.form-row').style.display = 'none';
         remoteHostDetailsDiv.classList.remove('visible');
 
         // Show join-specific section
@@ -52,6 +56,7 @@ function updateFormVisibility() {
         // Show new-connection inputs
         document.getElementById('connect-target').closest('.form-row').style.display = '';
         document.getElementById('protocol').closest('.form-row').style.display = '';
+        guacdSelection.closest('.form-row').style.display = '';
         joinConnectionDetailsDiv.classList.remove('visible');
         joinConnectionDetailsDiv.hidden = true;
 
@@ -79,6 +84,7 @@ connectButton.addEventListener('click', async () => {
     const mode = getSelectedRadioValue('connection-type');
     let tokenObj;
     let protocol = null;
+    let selectedGuacd = null;
 
     if (mode === 'join') {
         // Handle joining an existing connection
@@ -102,6 +108,11 @@ connectButton.addEventListener('click', async () => {
             alert('Please select a protocol');
             return;
         }
+
+        // Get selected guacd instance
+        selectedGuacd = guacdSelection.value;
+        const [guacdHost, guacdPort] = selectedGuacd.split(':');
+
         // Handle regular connection
         const target = getSelectedRadioValue('connect-target');
         let connectionSettings;
@@ -139,6 +150,8 @@ connectButton.addEventListener('click', async () => {
         tokenObj = {
             connection: {
                 type: protocol,
+                guacdHost: guacdHost,
+                guacdPort: parseInt(guacdPort),
                 settings: connectionSettings
             }
         };
@@ -156,13 +169,13 @@ connectButton.addEventListener('click', async () => {
             console.log(`Joining existing connection: ${tokenObj.connection.join}, read-only: ${tokenObj.connection.settings['read-only']}`);
         } else {
             const settings = tokenObj.connection.settings;
-            console.log(`Connecting with ${protocol.toUpperCase()} to ${settings.hostname}:${settings.port || (protocol === 'rdp' ? '3389' : '5900')}`);
+            console.log(`Connecting with ${protocol.toUpperCase()} to ${settings.hostname}:${settings.port || (protocol === 'rdp' ? '3389' : '5900')} via ${selectedGuacd}`);
         }
         const token = await generateGuacamoleToken(tokenObj);
         console.log("Token generated, initializing Guacamole...");
 
         // Initialize Guacamole client
-        initializeGuacamoleClient(token, mode === 'join' ? 'join' : protocol);
+        initializeGuacamoleClient(token, mode === 'join' ? 'join' : protocol, selectedGuacd);
     } catch (error) {
         console.error("Failed to connect:", error);
         alert("Connection failed: " + error.message);
@@ -174,7 +187,7 @@ connectButton.addEventListener('click', async () => {
 });
 
 // Function to initialize Guacamole client
-function initializeGuacamoleClient(token, protocol) {
+function initializeGuacamoleClient(token, protocol, selectedGuacd) {
     // Switch to display screen before initializing to avoid UI jumping
     connectionScreen.style.display = 'none';
     displayScreen.style.display = 'flex';
@@ -185,9 +198,11 @@ function initializeGuacamoleClient(token, protocol) {
         const connectionId = connectionIdInput.value.trim();
         const readOnly = readOnlyCheckbox.checked ? ' (read-only)' : '';
         displayTitle.textContent = `Joined connection: ${connectionId}${readOnly}`;
+        displayGuacd.textContent = 'guacd: Auto-routed';
     } else {
         const target = getSelectedRadioValue('connect-target');
         displayTitle.textContent = `Connected to: ${target === 'test-host' ? 'Test Host' : remoteHostnameInput.value} (${protocol.toUpperCase()})`;
+        displayGuacd.textContent = `guacd: ${selectedGuacd}`;
     }
 
     try {
@@ -198,6 +213,7 @@ function initializeGuacamoleClient(token, protocol) {
         tunnel.onuuid = function (uuid) {
             console.log("Connection UUID received:", uuid);
             console.log("This UUID can be used to join this session from another client");
+            console.log(`Session registered in registry with guacd routing: ${selectedGuacd || 'auto-detected'}`);
 
             // Show UUID in the header and store for copying
             if (displayUuid) {
@@ -316,6 +332,9 @@ function initializeGuacamoleClient(token, protocol) {
         client.connect(connectString);
 
         console.log("Guacamole client initialized and connected");
+        if (protocol !== 'join') {
+            console.log(`Dynamic routing: Connection routed to ${selectedGuacd}`);
+        }
     } catch (error) {
         // Clean up any partially created resources
         cleanupGuacamole();
@@ -349,10 +368,13 @@ function cleanupGuacamole() {
         currentClient = null;
     }
 
-    // Clear displayed UUID
+    // Clear displayed UUID and guacd info
     if (displayUuid) {
         displayUuid.textContent = '';
         delete displayUuid.dataset.uuid;
+    }
+    if (displayGuacd) {
+        displayGuacd.textContent = '';
     }
 
     // Properly detach keyboard handler
@@ -396,21 +418,21 @@ if (displayUuid) {
         const copyPromise = navigator.clipboard
             ? navigator.clipboard.writeText(uuid)
             : new Promise((resolve, reject) => {
-                  const textarea = document.createElement('textarea');
-                  textarea.value = uuid;
-                  textarea.style.position = 'fixed';
-                  textarea.style.left = '-9999px';
-                  document.body.appendChild(textarea);
-                  textarea.select();
-                  try {
-                      document.execCommand('copy');
-                      resolve();
-                  } catch (err) {
-                      reject(err);
-                  } finally {
-                      document.body.removeChild(textarea);
-                  }
-              });
+                const textarea = document.createElement('textarea');
+                textarea.value = uuid;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                } finally {
+                    document.body.removeChild(textarea);
+                }
+            });
 
         copyPromise
             .then(() => {
@@ -427,4 +449,4 @@ if (displayUuid) {
 // Handle page unloads to clean up any active sessions
 window.addEventListener('beforeunload', () => {
     cleanupGuacamole();
-}); 
+});

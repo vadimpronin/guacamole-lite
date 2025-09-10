@@ -1,10 +1,24 @@
 services:
-  guacd:
+  # Multiple guacd instances to demonstrate dynamic routing
+  guacd-1:
     image: guacamole/guacd:1.5.5
-    container_name: guacd
+    container_name: guacd-1
     restart: unless-stopped
     expose: [ "4822" ]
 
+  guacd-2:
+    image: guacamole/guacd:1.5.5
+    container_name: guacd-2
+    restart: unless-stopped
+    expose: [ "4822" ]
+
+  guacd-3:
+    image: guacamole/guacd:1.5.5
+    container_name: guacd-3
+    restart: unless-stopped
+    expose: [ "4822" ]
+
+  # Test desktop for connections
   desktop-linux:
     build: ./desktop-linux
     container_name: desktop-linux
@@ -13,18 +27,34 @@ services:
       - "3389"  # RDP Port
       - "5900"  # VNC Port
 
+  # Enhanced guacamole-lite server using the fork
   guacamole-lite-server:
     build:
       context: ..
       dockerfile: test-guac/guacamole-lite-server/Dockerfile
     container_name: guacamole-lite-server
-    depends_on: [ guacd ]
+    depends_on: [ guacd-1, guacd-2, guacd-3 ]
     environment:
-      GUACD_HOST: guacd
+      # Default guacd for fallback
+      GUACD_HOST: guacd-1
       GUACD_PORT: 4822
       ENCRYPTION_KEY: MySuperSecretKeyForParamsToken12
-    ports: [ "9091:8080" ]
+    ports: 
+      - "9091:8080"
+      - "3001:3001"
 
+  # Admin dashboard to show session registry and join tracking
+  admin-dashboard:
+    build:
+      context: ..
+      dockerfile: test-guac/admin-dashboard/Dockerfile
+    container_name: admin-dashboard
+    depends_on: [ guacamole-lite-server ]
+    environment:
+      GUACAMOLE_LITE_SERVER: http://guacamole-lite-server:3001
+    ports: [ "9092:3000" ]
+
+  # Enhanced client with guacd selection
   guacamole-lite-client:
     build:
       context: ./guacamole-lite-client
