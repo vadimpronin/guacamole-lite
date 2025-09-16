@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
     font-family: Arial, sans-serif;
@@ -69,11 +70,17 @@ label {
     color: #555;
 }
 
-input, select {
+input,
+select {
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+}
+
+select {
+    background-color: white;
+    cursor: pointer;
 }
 
 button {
@@ -89,6 +96,41 @@ button {
 
 button:hover {
     background-color: #3367d6;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.info-box {
+    background-color: #f0f8ff;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.info-box p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #31708f;
+}
+
+.info-box p:last-child {
+    margin-bottom: 0;
+}
+
+.info-box a {
+    color: #0056b3;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.info-box a:hover {
+    text-decoration: underline;
 }
 
 #display-screen {
@@ -109,12 +151,24 @@ button:hover {
 
 #display-title {
     font-weight: bold;
+    flex-grow: 1;
+}
+
+#display-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 15px;
+    font-size: 0.9em;
+}
+
+#display-guacd {
+    color: #aee;
+    margin-bottom: 2px;
 }
 
 #display-uuid {
-    margin-left: 15px;
     cursor: pointer;
-    font-size: 0.9em;
     color: #aee;
 }
 
@@ -174,4 +228,4 @@ button:hover {
     margin-bottom: 0;
     cursor: pointer;
     font-weight: normal;
-} 
+}
