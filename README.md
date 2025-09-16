@@ -341,16 +341,19 @@ callbacks and events, the advanced configuration guide has you covered.
    ```
 
 2. **End-to-End Testing Environment (`test-guac`):** For more comprehensive testing, the `test-guac` directory provides
-   a full end-to-end environment using Docker Compose. This setup simulates a real-world deployment scenario.
+   a full end-to-end environment using Docker Compose. This setup simulates a real-world deployment scenario with
+   multiple `guacd` instances, dynamic routing, and session join tracking.
 
 **Components:**
 
-* `guacd`: The core Guacamole proxy daemon.
+* `guacd-1`, `guacd-2`, `guacd-3`: Multiple instances of the core Guacamole proxy daemon to demonstrate dynamic routing.
 * `desktop-linux`: A sample Ubuntu Linux desktop with RDP and VNC installed, serving as the remote machine.
 * `guacamole-lite-server`: An instance of the `guacamole-lite` server running within a Node.js container.
 * `guacamole-lite-client`: A simple Nginx container serving an HTML page that uses the official `guacamole-common-js`
   library to connect to the `guacamole-lite-server`. It includes example code for generating the connection
   token (though this should be done server-side in production).
+* `admin-dashboard`: A web-based dashboard that provides a real-time view of the session registry, showing active
+  sessions and tracking all joined connections.
 
 **How to Use `test-guac`:**
 
@@ -363,9 +366,9 @@ callbacks and events, the advanced configuration guide has you covered.
   make up
   ```
   *Alternatively, you can use `docker compose up --build -d`.*
-* Once the containers are running, you can access the test Guacamole client in your browser at `http://localhost:9090`.
-  This page will automatically generate a token and attempt to connect to the `desktop-linux` container via the
-  `guacamole-lite-server`.
+* Once the containers are running, you can access the test environment:
+    * **Guacamole Client**: `http://localhost:9090`
+    * **Admin Dashboard**: `http://localhost:9092`
 * To stop and remove the containers and associated volumes:
   ```sh
   make down

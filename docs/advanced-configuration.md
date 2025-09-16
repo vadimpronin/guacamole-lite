@@ -6,7 +6,8 @@
 - [WebSocket Options](#websocket-options)
     - [Configuration](#configuration)
 - [Guacd Options](#guacd-options)
-    - [Configuration](#configuration-1)
+    - [Default `guacd` Instance Configuration](#default-guacd-instance-configuration)
+    - [Dynamic `guacd` Routing](#dynamic-guacd-routing)
 - [Client Options](#client-options)
     - [Encryption and Security](#encryption-and-security)
     - [Connection Settings](#connection-settings)
@@ -16,6 +17,7 @@
     - [Logging](#logging)
 - [Callbacks](#callbacks)
     - [`processConnectionSettings` Callback](#processconnectionsettings-callback)
+    - [`sessionRegistry` Callback](#sessionregistry-callback)
 - [Events](#events)
     - [`open` Event](#open-event)
     - [`close` Event](#close-event)
@@ -76,10 +78,19 @@ remote desktop sessions.
 ## Guacd Options
 
 The `guacdOptions` configuration in `guacamole-lite` specifies how it should connect to the `guacd`, which is
-responsible for handling the remote desktop protocols and translating them into the Guacamole
-protocol.
+responsible for handling the remote desktop protocols and translating them into the Guacamole protocol.
 
-### Configuration
+`guacamole-lite` can be configured to connect to a single/default `guacd` instance or dynamically route connections
+to different `guacd` instances (in multiple `guacd` setups) based on parameters provided in the encrypted connection
+token.
+
+`guacamole-lite` will first look for `guacdHost` and `guacdPort` in the connection token
+(see [Dynamic `guacd` Routing](#dynamic-guacd-routing)).
+If they are not present, it will fall back to the `guacdOptions` specified in the server configuration
+(see [Default `guacd` Instance Configuration](#default-guacd-instance-configuration)).
+If `guacdOptions` are also not provided, it will use the default values (`127.0.0.1` and `4822`).
+
+### Default `guacd` Instance Configuration
 
 The connection to `guacd` can be customized through the `guacdOptions` object. However, specifying this object is
 optional. If not provided, `guacamole-lite` will use the default values. Here's an example of setting `guacdOptions`:
@@ -98,6 +109,35 @@ server.
 `guacdOptions` object is directly passed to net.createConnection() function, allowing any supported options by
 net.createConnection() to be included. For a comprehensive list of all the options you can configure, refer to
 the [net documentation](https://nodejs.org/api/net.html#netcreateconnectionpath-connectlistener).
+
+### Dynamic `guacd` Routing
+
+For scalable, distributed architectures with multiple `guacd` instances, `guacamole-lite` can act as a dynamic router.
+Instead of being tied to a single `guacd` daemon, it can route each connection to a specific `guacd` instance based on
+parameters provided in the encrypted connection token.
+
+To specify a `guacd` target for a new connection, include `guacdHost` and `guacdPort` inside the `connection` object of
+your token:
+
+```json
+{
+  "connection": {
+    "type": "rdp",
+    "guacdHost": "guacd-instance-5.internal",
+    "guacdPort": 4822,
+    "settings": {
+      "hostname": "windows-vm.example.com",
+      "username": "user",
+      "password": "password"
+    }
+  }
+}
+```
+
+If `guacdHost` or `guacdPort` are present in the token, they will override the default `guacdOptions` for that specific
+connection. If they are omitted, the server's default `guacdOptions` will be used as a fallback. This feature enables a
+single `guacamole-lite` server to manage connections across multiple instances of `guacd` daemons in different regions
+or isolated networks.
 
 ---
 
@@ -243,6 +283,8 @@ and query parameters.
 
 The `connection` object in the token must contain either a `type` property (for creating a new connection to RDP, VNC,
 etc.) or a `join` property (for joining an existing connection by its ID). These two properties are mutually exclusive.
+It can also contain `guacdHost` and `guacdPort` to specify a target `guacd` instance (see [Dynamic
+`guacd` Routing](#dynamic-guacd-routing)).
 
 #### Merging Connection Settings
 
@@ -438,8 +480,13 @@ the [advanced_configuration.js example](../examples/advanced_configuration.js) i
 ### Joining Existing Connections
 
 `guacamole-lite` supports the Guacamole protocol's feature for joining existing, active connections. This is useful for
-scenarios like session sharing, screen sharing, administrative observation, or collaborative work. Instead of specifying a protocol `type`,
-the client provides the unique ID of the connection to be joined.
+scenarios like session sharing, screen sharing, administrative observation, or collaborative work. Instead of specifying
+a protocol `type`, the client provides the unique ID of the connection to be joined.
+
+With the addition of [dynamic routing](#dynamic-guacd-routing) and a [session registry](#sessionregistry-callback),
+`guacamole-lite` can automatically route a join request to the correct `guacd` instance where the session is active,
+even in a distributed environment with many `guacd` servers and multiple `guacamole-lite` instances (provided they share
+a session registry).
 
 #### Token Structure for Joining a Connection
 
@@ -497,8 +544,10 @@ To join an existing connection, the `connection` object within the encrypted tok
   // ... rest of the client setup
   ```
 
-- **`settings`**: An object containing parameters for the joining session. Join connections support comprehensive display settings:
-    - **`read-only`**: If set to `true`, the joining client will be in view-only mode and cannot interact with the remote desktop.
+- **`settings`**: An object containing parameters for the joining session. Join connections support comprehensive
+  display settings:
+    - **`read-only`**: If set to `true`, the joining client will be in view-only mode and cannot interact with the
+      remote desktop.
     - **`width`** and **`height`**: Screen resolution for the joining client (e.g., 1920, 1080).
     - **`dpi`**: Screen density in dots per inch (e.g., 96, 120, 144).
     - **`audio`**: Supported audio codecs (e.g., `["audio/L16"]` or `["audio/L16", "audio/L8"]`).
@@ -508,7 +557,8 @@ To join an existing connection, the `connection` object within the encrypted tok
 
 #### Configuration for Join Connections
 
-Join connections have their own default settings and allowed unencrypted parameters. By default, `guacamole-lite` includes comprehensive display settings support:
+Join connections have their own default settings and allowed unencrypted parameters. By default, `guacamole-lite`
+includes comprehensive display settings support:
 
 ```javascript
 const clientOptions = {
@@ -577,7 +627,8 @@ const client2Token = {
 };
 ```
 
-This enhanced join connection functionality ensures compatibility with guacd while providing the flexibility needed for various collaboration and sharing scenarios.
+This enhanced join connection functionality ensures compatibility with guacd while providing the flexibility needed for
+various collaboration and sharing scenarios.
 
 ---
 
@@ -648,8 +699,6 @@ Both functions prepend a timestamp and differentiate error messages by including
 ## Callbacks
 
 Callbacks in `guacamole-lite` provide hooks that allow developers to intercept and manipulate the connection process.
-For now the only available callback is `processConnectionSettings`, which offers a way to validate and modify connection
-parameters dynamically. We may add more callbacks in the future to support additional use cases.
 
 ### `processConnectionSettings` Callback
 
@@ -665,7 +714,7 @@ The callback function receives two arguments:
 If the `callback` is called with an error, the connection attempt will be rejected. Otherwise, the modified settings
 will be used to establish the connection with `guacd`.
 
-### Custom Parameters in Encrypted Token
+#### Custom Parameters in Encrypted Token
 
 Developers can include custom parameters within the encrypted token to pass additional data required for the connection.
 These custom parameters can then be accessed and utilized within the `processConnectionSettings` callback.
@@ -681,7 +730,7 @@ if (settings['expiration'] < Date.now()) {
 }
 ```
 
-### Validating and Modifying Connection Parameters
+#### Validating and Modifying Connection Parameters
 
 The `processConnectionSettings` callback can also be used to modify connection settings based on the provided
 parameters. For instance, if a `userId` is included in the token, it can be used to assign a unique drive path for file
@@ -694,7 +743,7 @@ settings.connection['drive-path'] = '/tmp/guacamole_' + settings['userId'];
 This approach allows for personalized settings for each user or connection, enhancing the flexibility and security
 of `guacamole-lite`.
 
-### Example Configuration
+#### Example Configuration
 
 Following is an example of how to define the `callbacks` object with the `processConnectionSettings` callback.
 
@@ -740,6 +789,120 @@ const callbacks = {
 
 In this configuration, the callback checks for token expiration and sets a user-specific drive path. The modified
 settings are then forwarded to `guacd` to establish the connection.
+
+### `sessionRegistry` Callback
+
+To support horizontal scaling and cross-instance session joining, you can provide a shared session registry. This is
+crucial for environments where multiple `guacamole-lite` instances are running behind a load balancer. A shared
+registry (e.g., backed by Redis or a database) ensures that if a user creates a session on `instance-1`, another user
+can join that same session via `instance-2`, because `instance-2` can look up the session details in the shared
+registry.
+
+If no `sessionRegistry` is provided, `guacamole-lite` defaults to an in-memory `Map`, which is sufficient only for
+single-instance deployments.
+
+#### `sessionRegistry` Interface
+
+The `sessionRegistry` object you provide must implement a `Map`-like interface with the following asynchronous methods.
+Each method should return a `Promise`:
+
+- **`get(sessionId)`**: Retrieves session information for the given `sessionId`. Should resolve to the session object or
+  `null`/`undefined` if not found.
+- **`set(sessionId, sessionData)`**: Stores or updates session data for the given `sessionId`. Should resolve when the
+  operation is complete.
+- **`delete(sessionId)`**: Removes session information for the given `sessionId`. Should resolve when the operation is
+  complete.
+
+#### Session Data Structure
+
+When a new session is established, `guacamole-lite` stores an object in the registry with a detailed structure. When
+other users join, their information is added to the `joinedConnections` array, providing a complete audit trail.
+
+**Example Data Structure:**
+
+```json
+{
+  "guacdHost": "guacd-instance-5.internal",
+  "guacdPort": 4822,
+  "connectionInfo": {
+    "type": "rdp",
+    "guacdHost": "guacd-instance-5.internal",
+    "guacdPort": 4822,
+    "settings": {
+      "hostname": "windows-vm.example.com"
+      // ... other initial connection settings
+    }
+  },
+  "createdAt": "2025-09-15T12:00:00.000Z",
+  "joinedConnections": [
+    {
+      "connectionId": 2,
+      "guacamoleConnectionId": "$c1a8a2b3-...",
+      "joinedAt": "2025-09-15T12:05:10.000Z",
+      "joinSettings": {
+        "read-only": true
+        // ... other settings for this specific joiner
+      }
+    }
+  ]
+}
+```
+
+#### Example Implementations
+
+**In-Memory Map (for single-instance or testing)**
+
+A simple `Map` can be provided in the `callbacks` object. `guacamole-lite` will correctly handle its synchronous methods
+by wrapping them in Promises.
+
+```javascript
+const sessionRegistry = new Map();
+
+const callbacks = {
+    processConnectionSettings: (settings, callback) => {
+        // ... your validation logic ...
+        callback(null, settings);
+    },
+    // Provide the session registry to the server
+    sessionRegistry: sessionRegistry
+};
+
+// When creating the server instance:
+const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions, callbacks);
+```
+
+**Redis-Backed Registry (for multi-instance production)**
+
+For a production environment, you can implement the interface with a client like `ioredis` to share state across
+multiple `guacamole-lite` instances.
+
+```javascript
+const Redis = require('ioredis');
+const redisClient = new Redis();
+
+const redisSessionRegistry = {
+    async get(sessionId) {
+        const data = await redisClient.get(`guac-session:${sessionId}`);
+        return data ? JSON.parse(data) : null;
+    },
+    async set(sessionId, sessionData) {
+        // Expire session data to prevent orphaned records, e.g., after 24 hours
+        await redisClient.set(`guac-session:${sessionId}`, JSON.stringify(sessionData), 'EX', 86400);
+    },
+    async delete(sessionId) {
+        await redisClient.del(`guac-session:${sessionId}`);
+    }
+};
+
+const callbacks = {
+    sessionRegistry: redisSessionRegistry,
+    // ... other callbacks
+};
+```
+
+By implementing the `sessionRegistry` callback, `guacamole-lite` can be extended to support complex, multi-server
+deployments while maintaining a centralized and persistent session state. This is crucial for features like
+cross-instance session joining and comprehensive session auditing.
 
 ---
 
@@ -896,18 +1059,25 @@ configuration, and include scripts for encrypting tokens in various programming 
 
 The `examples` directory within the `guacamole-lite` project contains the following files:
 
-- [advanced_configuration.js](../examples/advanced_configuration.js): Demonstrates how to set up `guacamole-lite` with advanced options, including custom
+- [advanced_configuration.js](../examples/advanced_configuration.js): Demonstrates how to set up `guacamole-lite` with
+  advanced options, including custom
   connection settings and callbacks.
-- [basic_server.js](../examples/basic_server.js): Provides a simple example of how to get a `guacamole-lite` server up and running with minimal
+- [basic_server.js](../examples/basic_server.js): Provides a simple example of how to get a `guacamole-lite` server up
+  and running with minimal
   configuration.
-- [encrypt_token.js](../examples/encrypt_token.js): Shows how to encrypt a connection token using Node.js, ensuring secure transmission of connection
+- [encrypt_token.js](../examples/encrypt_token.js): Shows how to encrypt a connection token using Node.js, ensuring
+  secure transmission of connection
   parameters.
-- [encrypt_token.php](../examples/encrypt_token.php): A PHP script for encrypting the connection token, useful for applications with a PHP backend.
-- [encrypt_token.py](../examples/encrypt_token.py): A Python example for token encryption, catering to systems where Python is the server-side
+- [encrypt_token.php](../examples/encrypt_token.php): A PHP script for encrypting the connection token, useful for
+  applications with a PHP backend.
+- [encrypt_token.py](../examples/encrypt_token.py): A Python example for token encryption, catering to systems where
+  Python is the server-side
   language of choice.
-- [expressjs.js](../examples/expressjs.js): Illustrates how to integrate `guacamole-lite` with an Express.js application, combining web server
+- [expressjs.js](../examples/expressjs.js): Illustrates how to integrate `guacamole-lite` with an Express.js
+  application, combining web server
   functionality with remote desktop capabilities.
-- [fastify.js](../examples/fastify.js): Illustrates how to integrate `guacamole-lite` with a Fastify application, combining web server
+- [fastify.js](../examples/fastify.js): Illustrates how to integrate `guacamole-lite` with a Fastify application,
+  combining web server
   functionality with remote desktop capabilities.
 
 These examples are designed to be informative and easily adaptable to your specific use case. Whether you're just
