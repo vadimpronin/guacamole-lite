@@ -1,7 +1,7 @@
-const {WebSocket} = require('ws');
+const { WebSocket } = require('ws');
 const MockGuacdServer = require('./helpers/MockGuacdServer');
 
-const {startServer, createWsClient, generateNewConnectionToken, generateJoinConnectionToken} = require('./helpers/testHelpers');
+const { startServer, createWsClient, generateNewConnectionToken, generateJoinConnectionToken } = require('./helpers/testHelpers');
 
 describe('WebSocket Server Tests', () => {
     let mockGuacdServer;
@@ -12,7 +12,7 @@ describe('WebSocket Server Tests', () => {
     beforeAll(async () => {
         wsPort = 8080;
         guacdPort = 4822;
-        mockGuacdServer = new MockGuacdServer({port: guacdPort});
+        mockGuacdServer = new MockGuacdServer({ port: guacdPort });
         await mockGuacdServer.start();
     });
 
@@ -99,7 +99,7 @@ describe('WebSocket Server Tests', () => {
             // Check if guacd client is already opened
             if (guacdClient.state === guacdClient.STATE_OPEN && guacdClient.guacamoleConnectionId) {
                 const sessionId = guacdClient.guacamoleConnectionId;
-                
+
                 // Send instruction from WS client
                 wsClient.send(testInstruction);
 
@@ -110,15 +110,15 @@ describe('WebSocket Server Tests', () => {
 
                     const mockGuacdClient = mockGuacdClientConnections[0];
                     const sizeInstructions = mockGuacdClient.receivedInstructions.filter(instr => instr.opcode === 'size');
-                    
+
                     // Should have at least one size instruction (from handshake)
                     expect(sizeInstructions.length).toBeGreaterThan(0);
-                    
+
                     // Look for the size instruction sent by the WebSocket client (1200x900)
-                    const clientSizeInstruction = sizeInstructions.find(instr => 
+                    const clientSizeInstruction = sizeInstructions.find(instr =>
                         instr.params.length === 2 && instr.params[0] === '1200' && instr.params[1] === '900'
                     );
-                    
+
                     expect(clientSizeInstruction).toBeDefined();
                     expect(clientSizeInstruction.params).toEqual(['1200', '900']);
 
@@ -143,15 +143,15 @@ describe('WebSocket Server Tests', () => {
 
                     const mockGuacdClient = mockGuacdClientConnections[0];
                     const sizeInstructions = mockGuacdClient.receivedInstructions.filter(instr => instr.opcode === 'size');
-                    
+
                     // Should have at least one size instruction (from handshake)
                     expect(sizeInstructions.length).toBeGreaterThan(0);
-                    
+
                     // Look for the size instruction sent by the WebSocket client (1200x900)
-                    const clientSizeInstruction = sizeInstructions.find(instr => 
+                    const clientSizeInstruction = sizeInstructions.find(instr =>
                         instr.params.length === 2 && instr.params[0] === '1200' && instr.params[1] === '900'
                     );
-                    
+
                     expect(clientSizeInstruction).toBeDefined();
                     expect(clientSizeInstruction.params).toEqual(['1200', '900']);
 
@@ -192,87 +192,103 @@ describe('WebSocket Server Tests', () => {
             let firstConnectionId;
             let connectionsReady = 0;
 
-            const checkCompletion = () => {
+            const checkCompletion = async () => {
                 connectionsReady++;
                 if (connectionsReady === 2) {
-                    setTimeout(() => {
+                    // Wait for async session registry operations to complete
+                    setTimeout(async () => {
                         // Both connections should be active
                         expect(server.activeConnections.size).toBe(2);
-                        
+
                         // Verify the second connection is joining the first
                         const connections = Array.from(server.activeConnections.values());
                         const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
                         expect(joinConnection).toBeDefined();
                         expect(joinConnection.connectionSettings.connection.join).toBe(firstConnectionId);
-                        
+
+                        // Verify session registry contains the session
+                        const sessionRegistry = server.sessionRegistry;
+                        const session = await sessionRegistry.get(firstConnectionId);
+                        expect(session).toBeDefined();
+                        expect(session.joinedConnections).toBeDefined();
+                        expect(session.joinedConnections.length).toBe(1);
+
                         wsClient1.close();
                         wsClient2.close();
                         done();
-                    }, 100);
+                    }, 200); // Increased timeout for async operations
                 }
             };
 
             // Create first connection (new connection)
             wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
-            
+
             server.on('open', (clientConnection) => {
                 if (!firstConnectionId) {
                     // This is the first connection
                     firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
                     expect(firstConnectionId).toBeDefined();
                     checkCompletion();
-                    
+
                     // Now create the second connection that joins the first
                     setTimeout(() => {
                         const joinToken = generateJoinConnectionToken(firstConnectionId);
                         wsClient2 = createWsClient(wsPort, joinToken);
-                    }, 50);
+                    }, 100); // Allow first connection to be fully registered
                 } else {
                     // This is the join connection
                     checkCompletion();
                 }
             });
-        }, 10000);
+        }, 15000); // Increased timeout for async operations
 
         test('Join connection with read-only parameter from token', (done) => {
             let wsClient1, wsClient2;
             let firstConnectionId;
             let connectionsReady = 0;
 
-            const checkCompletion = () => {
+            const checkCompletion = async () => {
                 connectionsReady++;
                 if (connectionsReady === 2) {
-                    setTimeout(() => {
+                    // Wait for async session registry operations
+                    setTimeout(async () => {
                         expect(server.activeConnections.size).toBe(2);
-                        
+
                         const connections = Array.from(server.activeConnections.values());
                         const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
                         expect(joinConnection).toBeDefined();
                         expect(joinConnection.connectionSettings.connection['read-only']).toBe(true);
-                        
+
+                        // Verify session registry
+                        const sessionRegistry = server.sessionRegistry;
+                        const session = await sessionRegistry.get(firstConnectionId);
+                        expect(session).toBeDefined();
+                        expect(session.joinedConnections).toBeDefined();
+                        expect(session.joinedConnections.length).toBe(1);
+
                         wsClient1.close();
                         wsClient2.close();
                         done();
-                    }, 100);
+                    }, 200);
                 }
             };
 
             wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
-            
+
             server.on('open', (clientConnection) => {
                 if (!firstConnectionId) {
                     firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
                     checkCompletion();
-                    
+
                     setTimeout(() => {
                         const joinToken = generateJoinConnectionToken(firstConnectionId, true);
                         wsClient2 = createWsClient(wsPort, joinToken);
-                    }, 50);
+                    }, 100);
                 } else {
                     checkCompletion();
                 }
             });
-        }, 10000);
+        }, 15000);
 
         test('Join connection with read-only parameter from query string', (done) => {
             let wsClient1, wsClient2;
@@ -284,36 +300,36 @@ describe('WebSocket Server Tests', () => {
                 if (connectionsReady === 2) {
                     setTimeout(() => {
                         expect(server.activeConnections.size).toBe(2);
-                        
+
                         const connections = Array.from(server.activeConnections.values());
                         const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
                         expect(joinConnection).toBeDefined();
                         expect(joinConnection.connectionSettings.connection['read-only']).toBe('true');
-                        
+
                         wsClient1.close();
                         wsClient2.close();
                         done();
-                    }, 100);
+                    }, 200);
                 }
             };
 
             wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
-            
+
             server.on('open', (clientConnection) => {
                 if (!firstConnectionId) {
                     firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
                     checkCompletion();
-                    
+
                     setTimeout(() => {
                         const joinToken = generateJoinConnectionToken(firstConnectionId);
                         const url = `ws://localhost:${wsPort}/?token=${joinToken}&read-only=true`;
                         wsClient2 = new WebSocket(url);
-                    }, 50);
+                    }, 100);
                 } else {
                     checkCompletion();
                 }
             });
-        }, 10000);
+        }, 15000);
 
         test('Join connection accepts display settings query parameters', (done) => {
             let wsClient1, wsClient2;
@@ -325,88 +341,95 @@ describe('WebSocket Server Tests', () => {
                 if (connectionsReady === 2) {
                     setTimeout(() => {
                         expect(server.activeConnections.size).toBe(2);
-                        
+
                         const connections = Array.from(server.activeConnections.values());
                         const joinConnection = connections.find(conn => conn.connectionSettings.connection.join);
                         expect(joinConnection).toBeDefined();
-                        
+
                         // Should have all display settings
                         expect(joinConnection.connectionSettings.connection['read-only']).toBe('true');
                         expect(joinConnection.connectionSettings.connection.width).toBe('1920');
                         expect(joinConnection.connectionSettings.connection.height).toBe('1080');
                         expect(joinConnection.connectionSettings.connection.dpi).toBe('120');
-                        
+
                         wsClient1.close();
                         wsClient2.close();
                         done();
-                    }, 100);
+                    }, 200);
                 }
             };
 
             wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
-            
+
             server.on('open', (clientConnection) => {
                 if (!firstConnectionId) {
                     firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
                     checkCompletion();
-                    
+
                     setTimeout(() => {
                         const joinToken = generateJoinConnectionToken(firstConnectionId);
                         const url = `ws://localhost:${wsPort}/?token=${joinToken}&read-only=true&width=1920&height=1080&dpi=120`;
                         wsClient2 = new WebSocket(url);
-                    }, 50);
+                    }, 100);
                 } else {
                     checkCompletion();
                 }
             });
-        }, 10000);
+        }, 15000);
 
         test('Multiple clients can join the same connection', (done) => {
             let wsClient1, wsClient2, wsClient3;
             let firstConnectionId;
             let connectionsReady = 0;
 
-            const checkCompletion = () => {
+            const checkCompletion = async () => {
                 connectionsReady++;
                 if (connectionsReady === 3) {
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         expect(server.activeConnections.size).toBe(3);
-                        
+
                         const connections = Array.from(server.activeConnections.values());
                         const joinConnections = connections.filter(conn => conn.connectionSettings.connection.join);
                         expect(joinConnections.length).toBe(2);
-                        
+
                         // Both join connections should reference the same original connection
                         joinConnections.forEach(conn => {
                             expect(conn.connectionSettings.connection.join).toBe(firstConnectionId);
                         });
-                        
+
+                        // Verify session registry has both joins
+                        const sessionRegistry = server.sessionRegistry;
+                        const session = await sessionRegistry.get(firstConnectionId);
+                        expect(session).toBeDefined();
+                        expect(session.joinedConnections).toBeDefined();
+                        expect(session.joinedConnections.length).toBe(2);
+
                         wsClient1.close();
                         wsClient2.close();
                         wsClient3.close();
                         done();
-                    }, 100);
+                    }, 300); // More time for multiple async operations
                 }
             };
 
             wsClient1 = createWsClient(wsPort, generateNewConnectionToken());
-            
+
             server.on('open', (clientConnection) => {
                 if (!firstConnectionId) {
                     firstConnectionId = clientConnection.guacdClient.guacamoleConnectionId;
                     checkCompletion();
-                    
+
                     setTimeout(() => {
                         const joinToken1 = generateJoinConnectionToken(firstConnectionId, true);
                         const joinToken2 = generateJoinConnectionToken(firstConnectionId, false);
                         wsClient2 = createWsClient(wsPort, joinToken1);
                         wsClient3 = createWsClient(wsPort, joinToken2);
-                    }, 50);
+                    }, 100);
                 } else {
                     checkCompletion();
                 }
             });
-        }, 10000);
+        }, 20000);
 
         test('Join connection handles invalid connection ID gracefully', (done) => {
             const invalidConnectionId = 'invalid-connection-id-123';
@@ -416,10 +439,10 @@ describe('WebSocket Server Tests', () => {
             server.on('open', (clientConnection) => {
                 expect(clientConnection.connectionSelector).toBe(invalidConnectionId);
                 expect(clientConnection.connectionSettings.connection.join).toBe(invalidConnectionId);
-                
+
                 // The connection should still be created (validation happens at guacd level)
                 expect(server.activeConnections.size).toBe(1);
-                
+
                 wsClient.close();
                 done();
             });
@@ -428,6 +451,6 @@ describe('WebSocket Server Tests', () => {
                 // Connection might fail at guacd level, which is expected
                 done();
             });
-        }, 10000);
+        }, 15000);
     });
 });

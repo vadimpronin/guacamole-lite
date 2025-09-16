@@ -167,11 +167,18 @@ class MockGuacdServer {
         this.allClients.add(clientConnection);
 
         let session = null;
-        const connectionState = {state: 'WAITING_FOR_SELECT'};
+        const connectionState = { state: 'WAITING_FOR_SELECT' };
         const parser = new GuacamoleParser();
 
         socket.on('data', data => parser.receive(data.toString('utf8')));
-        socket.on('error', err => console.error('Mock guacd: Socket error:', err.message));
+
+        // Suppress ECONNRESET errors during test cleanup - these are expected
+        socket.on('error', err => {
+            if (err.code !== 'ECONNRESET' && this.verbose) {
+                console.error('Mock guacd: Socket error:', err.message);
+            }
+        });
+
         socket.on('close', () => {
             if (this.verbose) console.log('Mock guacd: Client disconnected.');
             this.allClients.delete(clientConnection);
@@ -187,7 +194,7 @@ class MockGuacdServer {
 
         parser.oninstruction = (opcode, params) => {
             if (this.verbose) console.log(`Mock guacd: RECV <<< ${opcode}(${params.join(', ')})`);
-            clientConnection.receivedInstructions.push({opcode, params: [...params]});
+            clientConnection.receivedInstructions.push({ opcode, params: [...params] });
 
             if (connectionState.state !== 'CONNECTED') {
                 this._handleHandshake(clientConnection, connectionState, opcode, params, (newSession) => {
@@ -328,7 +335,7 @@ class MockGuacdServer {
 }
 
 if (require.main === module) {
-    const server = new MockGuacdServer({verbose: true});
+    const server = new MockGuacdServer({ verbose: true });
     server.start().then(() => {
         console.log('Mock guacd server is running. Press Ctrl+C to stop.');
         process.on('SIGINT', () => {

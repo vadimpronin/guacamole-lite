@@ -1,8 +1,8 @@
 const ClientConnection = require('../../lib/ClientConnection');
 const MockGuacdServer = require('./MockGuacdServer');
 const MockWebSocket = require('./MockWebSocket');
-const {LOGLEVEL, Logger} = require("../../lib/Logger");
-const {TESTS_LOGLEVEL, generateNewConnectionToken} = require("./testHelpers");
+const { LOGLEVEL, Logger } = require("../../lib/Logger");
+const { TESTS_LOGLEVEL, generateNewConnectionToken, AsyncSessionRegistry } = require("./testHelpers");
 const Crypt = require('../../lib/Crypt');
 
 // Shared test configuration
@@ -10,8 +10,8 @@ const clientOptions = {
     maxInactivityTime: 5000,
     log: {
         level: TESTS_LOGLEVEL,
-        stdLog: () => {},
-        errorLog: () => {}
+        stdLog: () => { },
+        errorLog: () => { }
     },
     crypt: {
         cypher: 'AES-256-CBC',
@@ -55,21 +55,23 @@ const clientOptions = {
     }
 };
 
+// Updated callbacks with async session registry
 const callbacks = {
-    processConnectionSettings: (settings, callback) => callback(undefined, settings)
+    processConnectionSettings: (settings, callback) => callback(undefined, settings),
+    sessionRegistry: new AsyncSessionRegistry()
 };
 
 // Helper function to create a ClientConnection with default settings
 const createClientConnection = (options = {}) => {
-    const { 
+    const {
         clientOptions: customClientOptions = clientOptions,
         query = {},
         callbacks: customCallbacks = callbacks,
         mockWebSocket
     } = options;
-    
+
     const validToken = generateNewConnectionToken();
-    const queryWithToken = {token: validToken, ...query};
+    const queryWithToken = { token: validToken, ...query };
 
     return new ClientConnection(
         customClientOptions,
@@ -84,9 +86,9 @@ const createClientConnection = (options = {}) => {
 const setupTestEnvironment = () => {
     // Use a wider range and current timestamp to minimize port conflicts
     const guacdPort = 4822 + Math.floor(Math.random() * 10000) + (Date.now() % 1000);
-    const mockGuacdServer = new MockGuacdServer({port: guacdPort});
+    const mockGuacdServer = new MockGuacdServer({ port: guacdPort });
     const mockWebSocket = new MockWebSocket();
-    
+
     return { mockGuacdServer, mockWebSocket, guacdPort };
 };
 
@@ -110,16 +112,36 @@ const cleanupClientConnection = (clientConnection) => {
     }
 };
 
+// Helper function to create join connection tokens with different settings
+const generateJoinConnectionToken = (connectionId, settings = {}) => {
+    // Support legacy boolean readOnly parameter for backward compatibility
+    if (typeof settings === 'boolean') {
+        settings = settings ? { 'read-only': settings } : {};
+    }
+
+    const tokenObject = {
+        connection: {
+            join: connectionId,
+            settings: settings
+        }
+    };
+
+    const crypt = new Crypt(clientOptions.crypt.cypher, clientOptions.crypt.key);
+    return crypt.encrypt(tokenObject);
+};
+
 module.exports = {
     clientOptions,
     callbacks,
     createClientConnection,
     setupTestEnvironment,
     cleanupClientConnection,
+    generateJoinConnectionToken,
     Crypt,
     ClientConnection,
     MockGuacdServer,
     MockWebSocket,
+    AsyncSessionRegistry,
     TESTS_LOGLEVEL,
     generateNewConnectionToken
 };
