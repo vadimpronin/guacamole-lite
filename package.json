@@ -1,7 +1,7 @@
 {
   "name": "guacamole-lite",
   "description": "Library to create servers compatible with the Guacamole protocol. Guacamole is a web client for RDP/VNC/SSH/Telnet",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "keywords": [
     "guacamole",
     "guacamole-client",
