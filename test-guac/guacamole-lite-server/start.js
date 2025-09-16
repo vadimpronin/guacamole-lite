@@ -29,13 +29,13 @@ const clientOptions = {
 // Create session registry for tracking sessions across guacd instances
 const sessionRegistry = new Map();
 
-// Set up callbacks to provide session registry to the enhanced fork
+// Set up callbacks to provide session registry
 const callbacks = {
     processConnectionSettings: (settings, callback) => callback(undefined, settings),
     sessionRegistry: sessionRegistry
 };
 
-console.log('Starting enhanced GuacamoleLite server with dynamic guacd routing...');
+console.log('Starting guacamole-lite server...');
 console.log('Available guacd instances: guacd-1:4822, guacd-2:4822, guacd-3:4822');
 console.log('Default guacd fallback:', `${guacdOptions.host}:${guacdOptions.port}`);
 

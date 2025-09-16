@@ -804,7 +804,7 @@ single-instance deployments.
 #### `sessionRegistry` Interface
 
 The `sessionRegistry` object you provide must implement a `Map`-like interface with the following asynchronous methods.
-Each method should return a `Promise`:
+Each method may return a Promise (`async`) or return the value directly:
 
 - **`get(sessionId)`**: Retrieves session information for the given `sessionId`. Should resolve to the session object or
   `null`/`undefined` if not found.

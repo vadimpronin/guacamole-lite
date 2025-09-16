@@ -8,7 +8,7 @@ const GUACAMOLE_LITE_SERVER = process.env.GUACAMOLE_LITE_SERVER || 'http://guaca
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API endpoint to get session data from GuacamoleLite server
+// API endpoint to get session data from guacamole-lite server
 app.get('/api/sessions', async (req, res) => {
   try {
     const response = await axios.get(`${GUACAMOLE_LITE_SERVER}/api/sessions`);

@@ -1,14 +1,13 @@
 .PHONY: help up down build clean logs client admin demo
 
 help: ## Show this help message
-	@echo "Enhanced GuacamoleLite test-guac environment with multi-guacd routing"
+	@echo "guacamole-lite test-guac environment with multi-guacd routing"
 	@echo ""
 	@echo "Available commands:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 up: ## Start all services
-	@echo "Starting enhanced GuacamoleLite test environment..."
-	@echo "Features: Multi-guacd routing, session join tracking, admin dashboard"
+	@echo "Starting guacamole-lite test environment..."
 	docker-compose up -d
 	@echo ""
 	@echo "Services started:"
@@ -17,7 +16,7 @@ up: ## Start all services
 	@echo "  - guacd instances:   guacd-1, guacd-2, guacd-3"
 	@echo ""
 	@echo "Demo steps:"
-	@echo "  1. Open client interface and create connections on different guacd instances"
+	@echo "  1. Open client interface and create connections"
 	@echo "  2. Copy session IDs and join them from another browser tab"
 	@echo "  3. Watch the admin dashboard for real-time session join tracking"
 

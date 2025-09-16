@@ -66,4 +66,3 @@ class GuacamoleStage extends React.Component {
 }
 
 export default GuacamoleStage
-

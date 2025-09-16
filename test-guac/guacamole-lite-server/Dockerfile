@@ -2,12 +2,12 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy the entire project (including the enhanced fork)
+# Copy the entire project
 COPY package.json .
 COPY lib ./lib
 COPY index.js .
 
-# Copy the enhanced server startup script
+# Copy the server startup script
 COPY test-guac/guacamole-lite-server/start.js .
 
 # Install dependencies
