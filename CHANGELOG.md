@@ -1,3 +1,65 @@
+# [1.2.0]
+
+This release introduces dynamic routing to multiple `guacd` instances and comprehensive session join tracking. 
+These features enable `guacamole-lite` to be used in large, distributed environments with horizontal scaling.
+
+### New Features
+
+- **Dynamic Multi-Host `guacd` Routing**: `guacamole-lite` is no longer tied to a single `guacd` instance.
+    - **Per-Connection Routing**: The encrypted token can now include `guacdHost` and `guacdPort` to route a new
+      connection to any `guacd` instance on-the-fly.
+    - **Automatic Join Routing**: When a user joins an existing session, the server automatically looks up the session's
+      location and routes the join request to the correct `guacd` instance, enabling seamless cross-instance session
+      sharing.
+    - **Backward Compatibility**: If routing information is not provided in the token, the server uses the default
+      `guacd` options, ensuring existing setups continue to work without modification.
+
+- **Comprehensive Session Join Tracking**:
+    - **Session Registry**: The server now tracks all active sessions, including which `guacd` instance they are running
+      on and who is connected. This registry can be an in-memory `Map` (default) or a shared external store (like Redis)
+      for multi-server deployments.
+    - **Complete Audit Trail**: For each active session, the registry maintains a list of all joined connections,
+      including their connection ID, the time they joined, and their specific settings (e.g., read-only mode).
+    - **Smart Session Cleanup**: When a user who has *joined* a session disconnects, only their connection is removed
+      from the registry, leaving the primary session and other joined users unaffected.
+
+### Breaking Changes
+
+- **None**: This release is fully backward-compatible with previous versions. All existing constructor patterns and
+  token structures will continue to work as before.
+
+### Features & Enhancements
+
+- **Session Registry Integration**: A new `sessionRegistry` callback allows developers to provide a shared, `Map`-like
+  object (e.g., backed by Redis) to manage session state across multiple horizontally-scaled `guacamole-lite` instances.
+- **Enhanced `guacd` Error Handling**: `guacd` connection errors (e.g., `ECONNREFUSED`, `ETIMEDOUT`) are now handled
+  gracefully within the client connection. Instead of crashing the server, specific Guacamole error codes (like
+  `SERVICE_UNAVAILABLE`) are sent to the web client.
+- **Enhanced Test Environment**: The end-to-end testing environment in `test-guac/` has been completely overhauled to
+  demonstrate the new scaling features:
+    - **Multi-guacd Simulation**: Now runs three separate `guacd` containers (`guacd-1`, `guacd-2`, `guacd-3`) to test
+      dynamic routing.
+    - **Admin Dashboard**: A new admin web interface is available to visualize the session registry in real-time,
+      showing active sessions, their `guacd` locations, and join tracking.
+    - **Updated Client UI**: The test client now includes a dropdown to select a target `guacd` instance for new
+      connections.
+
+### Bug Fixes
+
+- **Unhandled Server Crash on `guacd` Error**: Fixed a critical bug where a connection error from `guacd` would cause an
+  unhandled exception and crash the entire Node.js process. Errors are now caught per-connection, logged, and reported
+  to the client without affecting the server's stability.
+
+### Changes & Improvements
+
+- **Asynchronous Server Logic**: The core connection handling logic in `Server.js` has been refactored to be
+  asynchronous (`async newConnection`) to support external, promise-based session registries.
+- **Connection Lifecycle Refactoring**: Internal event handling between the `Server` and `ClientConnection` has been
+  improved to reliably emit a `ready` event only after the Guacamole connection ID has been received from `guacd`, which
+  is necessary for session registration.
+
+---
+
 # [1.1.0]
 
 This release introduces a major new feature for joining existing connections, along with significant internal
@@ -141,6 +203,7 @@ architecture, and enhanced protocol compliance.
 - **Improved Examples**: Code comments and examples aligned with architectural changes
 - **Package Metadata**: Added `scripts.test`, updated keywords and metadata in `package.json`
 
+[1.2.0]: https://github.com/vadimpronin/guacamole-lite/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/vadimpronin/guacamole-lite/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/vadimpronin/guacamole-lite/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/vadimpronin/guacamole-lite/compare/v0.7.3...v1.0.1
