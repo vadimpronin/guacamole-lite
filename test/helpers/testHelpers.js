@@ -1,9 +1,58 @@
 const Server = require('../../lib/Server.js');
-const {WebSocket} = require('ws');
+const { WebSocket } = require('ws');
 const Crypt = require('../../lib/Crypt.js');
-const {LOGLEVEL} = require("../../lib/Logger");
+const { LOGLEVEL } = require("../../lib/Logger");
 
 const TESTS_LOGLEVEL = LOGLEVEL.QUIET;
+
+// Async session registry for tests that mimics Redis behavior
+class AsyncSessionRegistry {
+    constructor() {
+        this.storage = new Map();
+    }
+
+    async get(key) {
+        return this.storage.get(key);
+    }
+
+    async set(key, value) {
+        this.storage.set(key, value);
+        return this;
+    }
+
+    async delete(key) {
+        return this.storage.delete(key);
+    }
+
+    async size() {
+        return this.storage.size;
+    }
+
+    // Synchronous methods for test compatibility
+    has(key) {
+        return this.storage.has(key);
+    }
+
+    clear() {
+        this.storage.clear();
+    }
+
+    entries() {
+        return this.storage.entries();
+    }
+
+    // For compatibility with existing API route tests
+    getAllSessions() {
+        const sessions = [];
+        for (const [key, value] of this.storage.entries()) {
+            sessions.push({
+                sessionId: key,
+                ...value
+            });
+        }
+        return sessions;
+    }
+}
 
 const clientOptions = {
     crypt: {
@@ -42,7 +91,13 @@ const startServer = (options) => {
         port: options.guacdPort
     };
 
-    return new Server(websocketOptions, guacdOptions, clientOptions);
+    // Provide async session registry for all tests
+    const callbacks = {
+        processConnectionSettings: (settings, callback) => callback(undefined, settings),
+        sessionRegistry: new AsyncSessionRegistry()
+    };
+
+    return new Server(websocketOptions, guacdOptions, clientOptions, callbacks);
 };
 
 const createWsClient = (port, token) => {
@@ -118,5 +173,6 @@ module.exports = {
     generateNewConnectionToken,
     generateJoinConnectionToken,
     generateJoinConnectionTokenWithDisplaySettings,
+    AsyncSessionRegistry,
     TESTS_LOGLEVEL
 };
